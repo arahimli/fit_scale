@@ -41,6 +41,18 @@ With fit_scale the same screen passes on all of them.
   size.
 - **Test harness.** `testFitScale` renders a screen on 9 device sizes × 3
   system text sizes and fails on overflow, small tap targets and tiny text.
+- **Not tied to Material.** The library imports only
+  `package:flutter/widgets.dart`, so it is unaffected by the Material split
+  (see below) and works the same with Material, Cupertino or your own
+  design system.
+
+## Flutter 3.47+ and the Material split
+
+Flutter 3.47 deprecated `package:flutter/material.dart` in favour of the
+separate `material_ui` package. fit_scale does not import either: it needs
+no `material_ui` dependency and no import changes in your app, and the same
+version works from Flutter 3.24 to the latest stable. CI runs on both ends
+of that range.
 
 ## Usage
 

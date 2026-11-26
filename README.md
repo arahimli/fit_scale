@@ -6,6 +6,8 @@
 renders the same screen with flutter_screenutil and with fit_scale side by
 side, on the device and system text size you pick.
 
+Read why it exists, with numbers, in [the article on Medium](https://medium.com/@arahimli/your-flutter-app-breaks-on-small-phones-heres-a-live-demo-of-why-and-the-fix-cea5fe840a3a).
+
 Responsive sizing for Flutter that does not break on small, large or rotated
 screens — and a test harness that proves it for every screen you ship.
 

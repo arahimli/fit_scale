@@ -47,10 +47,11 @@ text-size combinations fail, against 24 of 24 with linear scaling.
 - **Shapes that keep their shape.** `r()` and `FitSquare` use one factor
   based on the shortest side, so circles stay circles and nothing jumps
   when the device rotates.
-- **No singleton.** Sizes come from `context.fit` through an
-  `InheritedWidget`: widgets rebuild when the size changes, and a nested
-  `FitScaleScope(useLayoutSize: true)` scales a split-view pane by its own
-  size.
+- **Context first.** Sizes come from `context.fit` through an
+  `InheritedWidget`: only the widgets that read it rebuild when the size
+  changes, and a nested `FitScaleScope(useLayoutSize: true)` scales a
+  split-view pane by its own size. `56.w`-style extensions are available
+  in a separate import for migrating from flutter_screenutil.
 - **Test harness.** `testFitScale` renders a screen on 9 device sizes × 3
   system text sizes and fails on overflow, small tap targets and tiny text.
 - **Not tied to Material.** The library imports only
@@ -155,12 +156,64 @@ screenshot per case. For custom setup, call `pumpFitScreen` inside your own
 
 ## Migrating from flutter_screenutil
 
-| flutter_screenutil | fit_scale |
+### 1. Swap the import
+
+`package:fit_scale/extensions.dart` has the same `num` extensions as
+flutter_screenutil (`.w .h .r .sp .sw .sh .verticalSpace
+.horizontalSpace`), backed by fit_scale's clamped factors. Your screens
+compile unchanged:
+
+```dart
+// import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:fit_scale/extensions.dart';
+
+// ScreenUtilInit(designSize: const Size(360, 690), builder: ...)
+FitScaleScope(
+  config: const FitScaleConfig(designSize: Size(360, 690)),
+  child: MaterialApp(...),
+)
+```
+
+Extensions read the root scope, so a size change rebuilds the whole tree
+below it, the same as flutter_screenutil. `context.fit` rebuilds only the
+widgets that read it; prefer it in new code.
+
+### 2. Find what still breaks
+
+The swap alone is not a fix. Measured on the demo screen across 24 device
+and text-size cases:
+
+| | Cases failing | Overflow | Button < 48 | Text < 11 px | Distorted |
+|---|---|---|---|---|---|
+| flutter_screenutil | 24 | 21 | 15 | 2 | 24 |
+| Import swapped only | 21 | 19 | 15 | 0 | 12 |
+| After step 3 | **0** | 0 | 0 | 0 | 0 |
+
+Text no longer shrinks below the design, which is the point, but a fixed
+`SizedBox(height: x.h)` built around shrinking text can now overflow
+*more*: on an iPhone SE with text ×1.3 the overflow grows from 28 px to
+60 px. Buttons sized with `.h` stay below the touch-target minimum.
+
+Run the harness on each screen to get the list:
+
+```dart
+testFitScale('checkout', () => const MyApp(home: CheckoutPage()));
+```
+
+### 3. Fix what the harness reports
+
+| flutter_screenutil habit | fit_scale |
 |---|---|
-| `ScreenUtilInit(designSize: ...)` | `FitScaleScope(config: FitScaleConfig(designSize: ...))` |
-| `16.w` | `context.fit.w(16)` |
-| `16.h` | `context.fit.h(16)` |
-| `16.r` | `context.fit.r(16)` |
-| `16.sp` | `context.fit.sp(16)` |
 | `SizedBox(height: 52.h)` around text | `FitBox(height: 52)` |
-| `width: 56.w, height: 56.h` | `FitSquare(size: 56)` |
+| `height: 48.h` on a button or tile | `48.tap`, or `FitBox(height: 48, interactive: true)` |
+| `width: 56.w, height: 56.h` | `FitSquare(size: 56)` or `56.r` for both |
+
+| flutter_screenutil | fit_scale extension | fit_scale context API |
+|---|---|---|
+| `16.w` | `16.w` | `context.fit.w(16)` |
+| `16.h` | `16.h` | `context.fit.h(16)` |
+| `16.r` | `16.r` | `context.fit.r(16)` |
+| `16.sp` | `16.sp` | `context.fit.sp(16)` |
+| `0.5.sw` / `0.5.sh` | `0.5.sw` / `0.5.sh` | `context.fit.size.width * 0.5` |
+| `16.verticalSpace` | `16.verticalSpace` | `SizedBox(height: context.fit.h(16))` |
+| — | `48.tap` | `context.fit.tap(48)` |

@@ -1,3 +1,17 @@
+## 0.2.0
+
+* New `package:fit_scale/extensions.dart`: `56.w`-style extensions on `num`
+  with flutter_screenutil's names (`.w .h .r .sp .sw .sh .verticalSpace
+  .horizontalSpace`) plus `.tap`, backed by the clamped factors. Migrating
+  starts with swapping one import.
+* `FitScale.global`: data of the root `FitScaleScope`, used by the
+  extensions. When it changes the root scope rebuilds its subtree, since
+  extension calls have no `context`. Scopes with `useLayoutSize` never
+  become global.
+* `FitScaleScope` is now a `StatefulWidget`; its constructor is unchanged.
+* README: a measured migration guide. Swapping the import alone still
+  fails 21 of 24 demo cases; fixing what `testFitScale` reports gets to 0.
+
 ## 0.1.1
 
 * README: side-by-side screenshots against flutter_screenutil, measured on

@@ -1,3 +1,7 @@
+## 0.7.1
+
+* Shorter package description (pub.dev asks for 60–180 characters).
+
 ## 0.7.0
 
 * Foldables. `FitHinge` (`fit.hinge`, `FitScale.hingeOf`): the fold or

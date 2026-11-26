@@ -268,7 +268,11 @@ the fold); with `FitHingeLayout` 9 of 9.
 ![The order screen on a Flip in tabletop posture and on a Surface Duo, with FitLayout only and with FitHingeLayout](https://raw.githubusercontent.com/arahimli/fit_scale/main/doc/screenshots/fit_hinge_layout.png)
 
 These devices are simulated in tests by setting the view's display
-features; fit_scale has not been checked on physical foldables yet.
+features. On the Pixel Fold Android emulator (API 36) the device reports
+the same shape of data (a zero-width fold through the middle, flat when
+fully open and half-opened at a 90° hinge angle), and `fit.hinge`,
+`FitHingeLayout` and the overlay behaved as in the tests in book and
+tabletop posture. Not yet checked on physical foldables or a Surface Duo.
 
 ### Configuration
 

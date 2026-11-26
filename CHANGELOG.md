@@ -15,6 +15,8 @@
   (teal, `FitDebugProblemKind.hingeOverlap`); the panel shows the posture.
 * `FitScaleData` has a `hinge` field and its constructor takes
   `displayFeatures`.
+* Checked on the Pixel Fold Android emulator (API 36): fully open,
+  book and tabletop posture.
 
 ## 0.6.0
 

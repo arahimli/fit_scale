@@ -2,7 +2,7 @@ name: fit_scale
 description: >-
   Responsive sizing for Flutter that does not overflow on small, large or
   foldable screens, with a multi-device test harness and a debug overlay.
-version: 0.10.0
+version: 0.11.0
 repository: https://github.com/arahimli/fit_scale
 issue_tracker: https://github.com/arahimli/fit_scale/issues
 screenshots:
@@ -24,6 +24,8 @@ screenshots:
     path: doc/screenshots/fit_report.jpg
   - description: FitHingeLayout on a Flip in tabletop posture and a Surface Duo.
     path: doc/screenshots/fit_hinge_layout.png
+  - description: The fit_scale tab in Flutter DevTools.
+    path: doc/screenshots/fit_devtools.jpg
 topics:
   - responsive
   - layout

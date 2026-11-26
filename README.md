@@ -63,6 +63,9 @@ text-size combinations fail, against 24 of 24 with linear scaling.
 - **Foldables.** `fit.hinge` and `FitHingeLayout` put content on either
   side of a half-open fold or a hinge; the harness and the overlay flag
   anything lying across one.
+- **DevTools tab.** Screen size, window class, factors, fold and the
+  overlay's problems in Flutter DevTools, plus a slider that shows the
+  app at another system text size without touching device settings.
 - **Live debug overlay.** `FitDebugOverlay` outlines small tap targets,
   small text and cut-off text on top of the running app, with the same
   thresholds as the test harness.
@@ -352,6 +355,31 @@ and system text scale; tap it to collapse it. Put the overlay inside
 - `onProblems` gets the full list whenever it changes, for logging.
 - `minFontSize`, `minTapTarget`, `showPanel`, `panelAlignment` and
   `panelTextStyle` (the panel sits above your theme) can be changed.
+
+## DevTools extension
+
+fit_scale ships a Flutter DevTools extension. Run your app in debug,
+open DevTools, enable `fit_scale` under **DevTools Extensions** (the
+puzzle-piece icon; DevTools asks once per project), and open its tab:
+
+- **Screen:** size, design size, window and height class, the four
+  factors, the touch-target minimum, and the fold or hinge if any.
+- **System text size:** shows the app at ×1, ×1.3, ×2 or any value on the
+  slider, live, without changing device settings; "Use device setting"
+  goes back.
+- **Debug overlay:** force `FitDebugOverlay` on or off.
+- **Problems on screen:** the overlay's list, as in the harness.
+
+![The fit_scale tab in Flutter DevTools](https://raw.githubusercontent.com/arahimli/fit_scale/main/doc/screenshots/fit_devtools.jpg)
+
+It needs a `FitScaleScope` in the app (for the problem list, also a
+`FitDebugOverlay`). The service extensions behind it
+(`ext.fit_scale.state`, `setTextScale`, `setOverlay`) are registered in
+debug and profile builds only; release builds register nothing.
+
+Checked on a macOS debug run of the demo app with DevTools from Flutter
+3.38.9: the tab connects, shows the window's size, class and factors,
+and the text size and overlay controls reach the app.
 
 ## Testing your screens
 

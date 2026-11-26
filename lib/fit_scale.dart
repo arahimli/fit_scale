@@ -9,6 +9,7 @@ export 'src/breakpoints.dart';
 export 'src/config.dart';
 export 'src/data.dart';
 export 'src/debug_overlay.dart';
+export 'src/devtools.dart';
 export 'src/fit_text.dart';
 export 'src/hinge.dart';
 export 'src/hinge_layout.dart';

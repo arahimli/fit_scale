@@ -4,6 +4,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 import 'checks.dart';
+import 'devtools.dart';
 import 'hinge.dart';
 import 'scope.dart';
 
@@ -118,21 +119,32 @@ class _FitDebugOverlayState extends State<FitDebugOverlay> {
   bool _collapsed = false;
   bool _scanScheduled = false;
 
+  /// [FitDebugOverlay.enabled], unless DevTools forced it on or off.
+  bool get _enabled => FitDevTools.overlay.value ?? widget.enabled;
+
   @override
   void initState() {
     super.initState();
-    if (widget.enabled) _start();
+    FitDevTools.overlay.addListener(_onForced);
+    if (_enabled) _start();
+  }
+
+  void _onForced() {
+    if (!mounted) return;
+    setState(() => _enabled ? _start() : _stop());
   }
 
   @override
   void didUpdateWidget(FitDebugOverlay old) {
     super.didUpdateWidget(old);
-    if (widget.enabled && !old.enabled) _start();
-    if (!widget.enabled && old.enabled) _stop();
+    final wasEnabled = FitDevTools.overlay.value ?? old.enabled;
+    if (_enabled && !wasEnabled) _start();
+    if (!_enabled && wasEnabled) _stop();
   }
 
   @override
   void dispose() {
+    FitDevTools.overlay.removeListener(_onForced);
     _stop();
     super.dispose();
   }
@@ -146,6 +158,7 @@ class _FitDebugOverlayState extends State<FitDebugOverlay> {
     _semantics?.dispose();
     _semantics = null;
     _problems = const [];
+    FitDevTools.problems = const [];
   }
 
   /// Runs once after the next frame, then re-arms itself, so it follows
@@ -155,7 +168,7 @@ class _FitDebugOverlayState extends State<FitDebugOverlay> {
     _scanScheduled = true;
     SchedulerBinding.instance.addPostFrameCallback((_) {
       _scanScheduled = false;
-      if (!mounted || !widget.enabled) return;
+      if (!mounted || !_enabled) return;
       _scan();
       _scheduleScan();
     });
@@ -219,6 +232,17 @@ class _FitDebugOverlayState extends State<FitDebugOverlay> {
       _hingeRect = hingeRect;
     });
     if (problemsChanged) widget.onProblems?.call(_problems);
+    FitDevTools.problems = [
+      for (final p in _problems)
+        {
+          'kind': p.kind.name,
+          'message': p.message,
+          'left': p.rect.left,
+          'top': p.rect.top,
+          'width': p.rect.width,
+          'height': p.rect.height,
+        },
+    ];
   }
 
   double get _minTap =>
@@ -242,7 +266,7 @@ class _FitDebugOverlayState extends State<FitDebugOverlay> {
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.enabled) return widget.child;
+    if (!_enabled) return widget.child;
     _scheduleScan();
     return Stack(
       textDirection: TextDirection.ltr,

@@ -8,6 +8,7 @@ import 'package:meta/meta.dart';
 
 import 'breakpoints.dart';
 import 'config.dart';
+import 'devtools.dart';
 import 'data.dart';
 import 'hinge.dart';
 
@@ -64,7 +65,14 @@ class _FitScaleScopeState extends State<FitScaleScope> {
         displayFeatures: MediaQuery.displayFeaturesOf(context),
       );
       _publish(context, data);
-      return _FitScaleInherited(data: data, child: widget.child);
+      if (kReleaseMode) {
+        return _FitScaleInherited(data: data, child: widget.child);
+      }
+      FitDevTools.ensureRegistered();
+      return _FitScaleInherited(
+        data: data,
+        child: _DevToolsTextScale(child: widget.child),
+      );
     }
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -105,6 +113,31 @@ class _FitScaleScopeState extends State<FitScaleScope> {
 
       (context as Element).visitChildren(markDirty);
     }
+  }
+}
+
+/// Applies a text scale forced from the DevTools extension. Always in
+/// the tree in debug and profile builds, so toggling it keeps state.
+class _DevToolsTextScale extends StatelessWidget {
+  const _DevToolsTextScale({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<double?>(
+      valueListenable: FitDevTools.textScale,
+      child: child,
+      builder: (context, forced, child) {
+        final media = MediaQuery.of(context);
+        return MediaQuery(
+          data: forced == null
+              ? media
+              : media.copyWith(textScaler: TextScaler.linear(forced)),
+          child: child!,
+        );
+      },
+    );
   }
 }
 

@@ -1,3 +1,15 @@
+## 0.11.0
+
+* Flutter DevTools extension (`extension/devtools`): a `fit_scale` tab with
+  the screen's size, design size, window and height class, factors, touch
+  minimum and fold; a system text size slider that shows the app at
+  another text scale live; overlay on/off; and the overlay's problem list.
+* `FitDevTools`: the state and service extensions behind it
+  (`ext.fit_scale.state`, `setTextScale`, `setOverlay`), registered by the
+  root `FitScaleScope` in debug and profile builds only.
+* The extension's source lives in `devtools_extension/` and is not part of
+  the published package; only its build is.
+
 ## 0.10.0
 
 * `dart run fit_scale:migrate [--apply] [dir]`: migrates a project from

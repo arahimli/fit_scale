@@ -1,3 +1,14 @@
+## 0.6.0
+
+* `testFitScale(reportDir: ...)` writes a report when the group finishes,
+  also when cases fail: `<screen>.html` (devices × text sizes with a
+  screenshot per case and every problem), `<screen>.md`, `<screen>.json`
+  and an `index.html` of all screens. On GitHub Actions the markdown is
+  added to the job summary.
+* `FitScreenReport` with `toMarkdown()`, `toHtml()` and `toJson()`, and
+  `writeFitReport`, for custom reports.
+* CI uploads the package's own report as an artifact.
+
 ## 0.5.0
 
 * New `FitDebugOverlay`: outlines tap targets below the platform minimum

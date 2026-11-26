@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
@@ -9,6 +10,7 @@ import 'package:meta/meta.dart';
 
 import '../checks.dart';
 import 'devices.dart';
+import 'report.dart';
 
 /// What the harness checks on every device and text size.
 enum FitCheck {
@@ -159,8 +161,15 @@ Future<FitReport> pumpFitScreen(
 /// testFitScale('checkout', () => const MyApp(home: CheckoutPage()));
 /// ```
 ///
-/// With [goldenDir] set, also saves a screenshot per case
+/// With [goldenDir] set, also compares a golden per case
 /// (run `flutter test --update-goldens` to write them).
+///
+/// With [reportDir] set, writes a report when the group finishes, also
+/// when cases fail: `<description>.html` (a device × text size table with
+/// a screenshot per case), `.md` (the same table, for pull requests),
+/// `.json`, and an `index.html` of every screen in the directory. On
+/// GitHub Actions the markdown is added to the job summary. See
+/// [writeFitReport].
 @isTestGroup
 void testFitScale(
   String description,
@@ -170,9 +179,14 @@ void testFitScale(
   double minFontSize = 11,
   Set<FitCheck> checks = FitCheck.defaults,
   String? goldenDir,
+  String? reportDir,
   bool? skip,
 }) {
+  final screen = reportDir == null ? null : FitScreenReport(description);
   group(description, () {
+    if (screen != null) {
+      tearDownAll(() => writeFitReport(screen, reportDir!));
+    }
     for (final device in devices) {
       for (final scale in textScales) {
         testWidgets('$device text x$scale', (tester) async {
@@ -184,6 +198,11 @@ void testFitScale(
             minFontSize: minFontSize,
             checks: checks,
           );
+          if (screen != null) {
+            final shot = '${screen.slug}/${device.name}_x$scale.png';
+            await _screenshot(tester, '$reportDir/$shot');
+            screen.cases.add(FitCaseResult(report, screenshot: shot));
+          }
           if (goldenDir != null) {
             await expectLater(
               find.byKey(fitScaleRootKey),
@@ -193,6 +212,26 @@ void testFitScale(
           if (!report.passed) fail(report.toString());
         }, skip: skip);
       }
+    }
+  });
+}
+
+/// Saves the harness root as a PNG at [path].
+Future<void> _screenshot(WidgetTester tester, String path) async {
+  final boundary = tester.renderObject<RenderRepaintBoundary>(
+    find.byKey(fitScaleRootKey),
+  );
+  // Image encoding needs real async work, which widget tests fake.
+  await tester.runAsync(() async {
+    final image = await boundary.toImage();
+    try {
+      final png = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (png == null) return;
+      File(path)
+        ..parent.createSync(recursive: true)
+        ..writeAsBytesSync(png.buffer.asUint8List());
+    } finally {
+      image.dispose();
     }
   });
 }

@@ -62,7 +62,8 @@ text-size combinations fail, against 24 of 24 with linear scaling.
   small text and cut-off text on top of the running app, with the same
   thresholds as the test harness.
 - **Test harness.** `testFitScale` renders a screen on 11 device sizes × 3
-  system text sizes and fails on overflow, small tap targets and tiny text.
+  system text sizes and fails on overflow, small tap targets and tiny text,
+  with an HTML report of every case and a table in your CI job summary.
 - **Not tied to Material.** The library imports only
   `package:flutter/widgets.dart`, so it is unaffected by the Material split
   (see below) and works the same with Material, Cupertino or your own
@@ -302,6 +303,61 @@ testFitScale(
   checks: {...FitCheck.defaults, FitCheck.truncatedText},
 );
 ```
+
+### Report
+
+Pass `reportDir` to get one page per screen instead of 33 separate test
+results:
+
+```dart
+testFitScale(
+  'checkout',
+  () => const MyApp(home: CheckoutPage()),
+  reportDir: 'build/fit_scale_report',
+);
+```
+
+When the group finishes (also when cases fail) it writes:
+
+| File | Contents |
+|---|---|
+| `checkout.html` | devices × text sizes, a screenshot per case, every problem listed below |
+| `checkout.md` | the same table in markdown, for a pull request comment |
+| `checkout.json` | the raw results |
+| `index.html` | every screen in the directory with its pass count |
+
+On GitHub Actions the markdown table is also added to the job summary, so
+the result is on the run page without opening the logs. Keep the HTML as
+an artifact:
+
+```yaml
+- run: flutter test
+- uses: actions/upload-artifact@v4
+  if: always()
+  with:
+    name: fit_scale-report
+    path: build/fit_scale_report
+```
+
+Call `loadFitScaleTestFonts` in `setUpAll` so screenshots show real text.
+For your own reports, build a `FitScreenReport` from `pumpFitScreen`
+results and use `toMarkdown()`, `toHtml()` or `writeFitReport`.
+
+![HTML report of the flutter_screenutil order screen: 3 of 33 cases pass](https://raw.githubusercontent.com/arahimli/fit_scale/main/doc/screenshots/fit_report.jpg)
+
+The job summary for the same screen starts like this:
+
+```
+### flutter_screenutil order screen: 3 / 33 passed
+
+| Device | Class | Text ×1.0 | Text ×1.3 | Text ×2.0 |
+|---|---|---|---|---|
+| fold_cover 280×653 | compact | ✗ 1 tap · 3 font | ✗ 1 overflow · 1 tap | ✗ 1 overflow · 1 tap |
+| iphone_se1 320×568 | compact | ✗ 1 overflow · 4 tap · 1 font | ✗ 1 overflow · 4 tap | ✗ 1 overflow · 4 tap |
+| iphone16pro 402×874 | compact | ✓ | ✗ 1 overflow | ✗ 1 overflow |
+```
+
+The same screen written with fit_scale passes all 33.
 
 ## Migrating from flutter_screenutil
 

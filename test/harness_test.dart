@@ -8,8 +8,13 @@ import 'support/screens.dart';
 void main() {
   setUpAll(loadFitScaleTestFonts);
 
-  // 9 devices x 3 text sizes = 27 cases, all must pass.
-  testFitScale('good screen', () => fitApp(const GoodScreen()));
+  // 11 devices x 3 text sizes = 33 cases, all must pass. CI uploads the
+  // report from build/fit_scale_report.
+  testFitScale(
+    'good screen',
+    () => fitApp(const GoodScreen()),
+    reportDir: 'build/fit_scale_report',
+  );
 
   group('bad screen is caught', () {
     late FitReport report;

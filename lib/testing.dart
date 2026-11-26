@@ -6,3 +6,4 @@ library;
 
 export 'src/testing/devices.dart';
 export 'src/testing/harness.dart';
+export 'src/testing/report.dart';

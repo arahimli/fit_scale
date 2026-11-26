@@ -1,3 +1,21 @@
+## 0.10.0
+
+* `dart run fit_scale:migrate [--apply] [dir]`: migrates a project from
+  flutter_screenutil. Swaps the import and the pubspec dependency,
+  renames `ScreenUtilInit(` → `FitScreenUtilInit(` and `ScreenUtil()` →
+  `FitScreenUtil()`, removes the `SU` mixin, and lists by file and line
+  what needs a person (static `ScreenUtil` calls, R-widgets, fixed `.h`
+  heights around text, `.w`/`.h` squares). Dry run unless `--apply`.
+* `FitScreenUtilInit` (accepts `ScreenUtilInit`'s arguments, builds a
+  `FitScaleScope`) and `FitScreenUtil` (screenutil's instance API, clamped)
+  in `package:fit_scale/extensions.dart`.
+* Extensions: screenutil's `.dm .dg .spMin .sm .spMax` and spacing getters
+  on `num`, and `.r .w .h` (plus `.dm .dg`, `.hw`) on `EdgeInsets`,
+  `BorderRadius`, `Radius` and `BoxConstraints`. `verticalSpace` and
+  `horizontalSpace` now return `SizedBox`, as in screenutil.
+* Checked on flutter_screenutil 5.9.3's example app: 7 files migrated,
+  5 compile errors left, all in the tool's list.
+
 ## 0.9.0
 
 * Report diff: `testFitScale(baselineDir: ...)` and `writeFitReport` (or

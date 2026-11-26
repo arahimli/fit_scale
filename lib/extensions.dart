@@ -13,3 +13,4 @@ library;
 
 export 'fit_scale.dart';
 export 'src/extensions.dart';
+export 'src/screenutil_compat.dart';

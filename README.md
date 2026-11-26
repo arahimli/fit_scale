@@ -490,12 +490,35 @@ pull requests (the workflow needs `permissions: actions: read`):
 
 ## Migrating from flutter_screenutil
 
-### 1. Swap the import
+### 1. Swap the import (or let the tool do it)
 
-`package:fit_scale/extensions.dart` has the same `num` extensions as
-flutter_screenutil (`.w .h .r .sp .sw .sh .verticalSpace
-.horizontalSpace`), backed by fit_scale's clamped factors. Your screens
-compile unchanged:
+```bash
+dart pub add fit_scale
+dart run fit_scale:migrate          # dry run: shows what it would change
+dart run fit_scale:migrate --apply  # writes it
+```
+
+The tool makes only mechanical edits: the import becomes
+`package:fit_scale/extensions.dart`, `ScreenUtilInit(` becomes
+`FitScreenUtilInit(` (same arguments; it builds a `FitScaleScope`),
+`ScreenUtil()` becomes `FitScreenUtil()` (same instance API: `setWidth`,
+`setSp`, `screenWidth`, `statusBarHeight`…), the empty `SU` mixin goes, and
+the pubspec dependency is swapped. Everything it cannot change safely is
+listed with file and line: static `ScreenUtil.init`/`registerToBuild`
+calls, `RSizedBox`/`RPadding`/`REdgeInsets`, fixed `.h` heights around text
+and `.w`/`.h` squares.
+
+`package:fit_scale/extensions.dart` has screenutil's extensions on `num`
+(`.w .h .r .sp .dm .dg .spMin .sm .spMax .sw .sh` and the spacing
+getters), `EdgeInsets`, `BorderRadius`, `Radius` and `BoxConstraints`,
+backed by fit_scale's clamped factors.
+
+Measured on flutter_screenutil's own example app: the tool changed 7
+files (38 `ScreenUtil()` calls, 3 `ScreenUtilInit`, 1 `SU` mixin) and
+listed 11 places to check; afterwards 5 compile errors remained, all of
+them among the listed places (one `RSizedBox`, four `ScreenUtil.init`).
+
+By hand, the same swap looks like this:
 
 ```dart
 // import 'package:flutter_screenutil/flutter_screenutil.dart';

@@ -4,6 +4,7 @@
   the real package (0 of 24 device and text-size cases fail), and a note on
   the Flutter 3.47 Material split.
 * pubspec: screenshots for pub.dev.
+* Test screens and README samples use a generic English order screen.
 * CI on Flutter 3.24.5 and stable; `flutter_lints` lowered to ^5.0.0 so the
   package resolves on its minimum Flutter version.
 

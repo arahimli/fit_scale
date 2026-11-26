@@ -1,7 +1,7 @@
 import 'package:fit_scale/fit_scale.dart';
 import 'package:flutter/material.dart';
 
-/// The demo sales screen, written with fit_scale.
+/// The demo order screen, written with fit_scale.
 class GoodScreen extends StatelessWidget {
   const GoodScreen({super.key});
 
@@ -24,7 +24,7 @@ class GoodScreen extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                     child: Center(
-                      child: Text('ER',
+                      child: Text('JD',
                           style: TextStyle(
                               fontSize: fit.sp(18), color: Colors.white)),
                     ),
@@ -32,7 +32,7 @@ class GoodScreen extends StatelessWidget {
                 ),
                 SizedBox(width: fit.w(12)),
                 Expanded(
-                  child: Text('Starter Pack satışı',
+                  child: Text('Order summary',
                       style: TextStyle(
                           fontSize: fit.sp(20), fontWeight: FontWeight.w700)),
                 ),
@@ -50,14 +50,14 @@ class GoodScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Tarif: Super 25',
+                        Text('Wireless Headphones',
                             style: TextStyle(
                                 fontSize: fit.sp(18),
                                 fontWeight: FontWeight.w700)),
                         SizedBox(height: fit.h(6)),
                         Text(
-                          '25 GB internet, limitsiz zəng və 500 SMS bir ay '
-                          'müddətinə.',
+                          'Noise cancelling, 30-hour battery and USB-C '
+                          'fast charging.',
                           style: TextStyle(fontSize: fit.sp(14)),
                         ),
                       ],
@@ -66,7 +66,7 @@ class GoodScreen extends StatelessWidget {
                 ),
               ),
               SizedBox(height: fit.h(16)),
-              for (final label in const ['Nömrə seçimi', 'Sənəd skanı'])
+              for (final label in const ['Shipping address', 'Payment method'])
                 Padding(
                   padding: EdgeInsets.only(bottom: fit.h(8)),
                   child: Material(
@@ -89,7 +89,7 @@ class GoodScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-              Text('Qiymətlərə ƏDV daxildir',
+              Text('Prices include VAT',
                   style: TextStyle(fontSize: fit.sp(11))),
               SizedBox(height: fit.h(24)),
               FitBox(
@@ -97,7 +97,7 @@ class GoodScreen extends StatelessWidget {
                 interactive: true,
                 child: FilledButton(
                   onPressed: () {},
-                  child: Text('Satışı davam et',
+                  child: Text('Place order',
                       style: TextStyle(fontSize: fit.sp(16))),
                 ),
               ),
@@ -122,16 +122,16 @@ class BadScreen extends StatelessWidget {
           SizedBox(
             height: 40,
             child: Column(children: const [
-              Text('Tarif: Super 25', style: TextStyle(fontSize: 18)),
-              Text('25 GB internet, limitsiz zəng və 500 SMS bir ay '
-                  'müddətinə.'),
+              Text('Wireless Headphones', style: TextStyle(fontSize: 18)),
+              Text('Noise cancelling, 30-hour battery and USB-C '
+                  'fast charging.'),
             ]),
           ),
           GestureDetector(
             onTap: () {},
             child: const SizedBox(width: 30, height: 30),
           ),
-          const Text('Qiymətlərə ƏDV daxildir', style: TextStyle(fontSize: 8)),
+          const Text('Prices include VAT', style: TextStyle(fontSize: 8)),
         ],
       ),
     );

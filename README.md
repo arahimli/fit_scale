@@ -15,7 +15,7 @@ screen designed at 360×690:
 |---|---|
 | iPhone SE 320×568, default text | overflowed by 4.9 px, button 39.5 px tall, 11 sp caption drawn at 9.8 px |
 | Galaxy Fold cover 280×653 | caption 8.6 px, 56×56 avatar became 44×53 |
-| Any phone, system text ×2.0 | fixed `.h` heights overflowed by 121–141 px |
+| Any phone, system text ×2.0 | fixed `.h` heights overflowed by 167–204 px |
 | iPad mini | overflowed by 34 px at default text, avatar 116×92 |
 | Phone landscape 874×402 | button 28 px, overflow 164 px, avatar ratio 4.2 |
 
@@ -145,7 +145,7 @@ every problem found:
 android_compact 360x640, text x1.3: 3 problem(s)
   - [overflow] A RenderFlex overflowed by 45 pixels on the bottom.
   - [tapTargets] SemanticsNode#6(Rect.fromLTRB(165.0, 40.0, 195.0, 70.0), actions: [tap]): expected tap target size of at least Size(48.0, 48.0), but found Size(30.0, 30.0)
-  - [minFont] "Qiymətlərə ƏDV daxildir" renders at 10.4 px, below 11.0
+  - [minFont] "Prices include VAT" renders at 10.4 px, below 11.0
 ```
 
 Options: `devices` (`FitDevices.small`, `.phones`, `.all` or your own

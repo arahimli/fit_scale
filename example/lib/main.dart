@@ -29,10 +29,16 @@ class CheckoutPage extends StatelessWidget {
           children: [
             Row(
               children: [
-                // Stays a circle on every aspect ratio.
+                // Stays a circle on every aspect ratio, and the initials
+                // shrink to stay inside it with a large system font.
                 FitSquare(
                   size: 56,
-                  child: const CircleAvatar(child: Text('ER')),
+                  child: const CircleAvatar(
+                    child: Padding(
+                      padding: EdgeInsets.all(8),
+                      child: FitText('ER'),
+                    ),
+                  ),
                 ),
                 SizedBox(width: fit.w(12)),
                 Expanded(

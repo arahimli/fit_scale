@@ -47,6 +47,9 @@ text-size combinations fail, against 24 of 24 with linear scaling.
 - **Shapes that keep their shape.** `r()` and `FitSquare` use one factor
   based on the shortest side, so circles stay circles and nothing jumps
   when the device rotates.
+- **Text that fits where nothing can grow.** `FitText` shrinks only when
+  it does not fit (an avatar, a badge, a one-line header), and never below
+  a minimum size drawn on screen, system text size included.
 - **Context first.** Sizes come from `context.fit` through an
   `InheritedWidget`: only the widgets that read it rebuild when the size
   changes, and a nested `FitScaleScope(useLayoutSize: true)` scales a
@@ -86,7 +89,12 @@ class CheckoutPage extends StatelessWidget {
     return ListView(
       padding: EdgeInsets.all(fit.w(16)),
       children: [
-        FitSquare(size: 56, child: const CircleAvatar(child: Text('ER'))),
+        FitSquare(
+          size: 56,
+          child: const CircleAvatar(
+            child: Padding(padding: EdgeInsets.all(8), child: FitText('ER')),
+          ),
+        ),
         SizedBox(height: fit.h(16)),
         FitBox(
           height: 96,
@@ -113,6 +121,45 @@ class CheckoutPage extends StatelessWidget {
 | `fit.clamped(v, min:, max:)` | a uniform size with your own limits |
 | `FitBox(height:, interactive:)` | instead of `SizedBox(height: x.h)` around text |
 | `FitSquare(size:)` | instead of `width: x.w, height: x.h` for squares |
+| `FitText(text, minFontSize:)` | text in a space that cannot grow |
+
+### FitText
+
+`FitBox` lets a box grow with its text. When the box cannot grow, use
+`FitText`: it keeps the style's font size if the text fits, otherwise
+finds the largest size that does, down to `minFontSize` (default 11). The
+floor is the size drawn on screen after the user's system text scale, the
+same number the harness's `minFont` check uses, so the two never
+disagree. If the text does not fit even at the floor, `overflow` applies
+(ellipsis by default).
+
+```dart
+FitSquare(
+  size: 56,
+  child: DecoratedBox(
+    decoration: const BoxDecoration(
+      shape: BoxShape.circle,
+      color: Color(0xFF2D5BFF),
+    ),
+    child: Padding(
+      padding: EdgeInsets.all(context.fit.r(8)), // stay inside the circle
+      child: Center(
+        child: FitText('JD', style: TextStyle(fontSize: context.fit.sp(18))),
+      ),
+    ),
+  ),
+)
+```
+
+Measured on 8 devices × 3 text sizes: with a plain `Text` the initials
+leave the circle in all 8 cases at text ×2.0; with `FitText` in none of
+the 24.
+
+![Avatar initials with Text and with FitText at system text ×2.0](https://raw.githubusercontent.com/arahimli/fit_scale/main/doc/screenshots/fit_text_avatar_x2.0.png)
+
+`maxLines` defaults to 1. Set it to `null` to let the text wrap onto as
+many lines as the height allows (an ellipsis then becomes a clip, because
+Flutter would otherwise cut the first line).
 
 ### Configuration
 
@@ -153,6 +200,19 @@ Options: `devices` (`FitDevices.small`, `.phones`, `.all` or your own
 `FitDevice`), `textScales`, `minFontSize`, `checks`, and `goldenDir` to save a
 screenshot per case. For custom setup, call `pumpFitScreen` inside your own
 `testWidgets` and inspect the returned `FitReport`.
+
+`checks` defaults to `FitCheck.defaults` (overflow, tap targets, small
+text). `FitCheck.truncatedText` also reports text cut off by `maxLines`,
+including a `FitText` that did not fit at its minimum. It is opt-in
+because many apps cut long names on purpose:
+
+```dart
+testFitScale(
+  'profile',
+  () => const MyApp(home: ProfilePage()),
+  checks: {...FitCheck.defaults, FitCheck.truncatedText},
+);
+```
 
 ## Migrating from flutter_screenutil
 

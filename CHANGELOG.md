@@ -1,3 +1,14 @@
+## 0.3.0
+
+* New `FitText`: text that shrinks only when it does not fit, never below
+  `minFontSize` drawn on screen (system text scale included, the same
+  measure as the `minFont` check). For avatars, badges, chips and one-line
+  headers. Measured in the demo: plain `Text` initials leave a 56 px
+  avatar in all 8 devices at text ×2.0, `FitText` initials in none of 24.
+* New opt-in `FitCheck.truncatedText`: reports text cut off by `maxLines`.
+* New `FitCheck.defaults`, the checks run when none are given.
+* Example and README use `FitText` for avatar initials.
+
 ## 0.2.0
 
 * New `package:fit_scale/extensions.dart`: `56.w`-style extensions on `num`

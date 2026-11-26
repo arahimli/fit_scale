@@ -7,5 +7,6 @@ library;
 
 export 'src/config.dart';
 export 'src/data.dart';
+export 'src/fit_text.dart';
 export 'src/scope.dart';
 export 'src/widgets.dart';

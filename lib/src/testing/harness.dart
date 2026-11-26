@@ -20,6 +20,16 @@ enum FitCheck {
 
   /// No visible text rendered smaller than `minFontSize`.
   minFont,
+
+  /// No text cut off by `maxLines` (ellipsis, fade or clip), including a
+  /// `FitText` that did not fit even at its minimum size.
+  ///
+  /// Not in [defaults]: many apps cut long names on purpose. Add it with
+  /// `checks: {...FitCheck.defaults, FitCheck.truncatedText}`.
+  truncatedText;
+
+  /// The checks run when none are given.
+  static const defaults = {overflow, tapTargets, minFont};
 }
 
 /// One thing that went wrong on one device.
@@ -61,8 +71,6 @@ class FitReport {
 /// Key of the [RepaintBoundary] the harness wraps the app in.
 const fitScaleRootKey = ValueKey('fit_scale_root');
 
-const _allChecks = {FitCheck.overflow, FitCheck.tapTargets, FitCheck.minFont};
-
 /// Renders [app] as it would look on [device] with the system text
 /// scale set to [textScale], then runs [checks].
 ///
@@ -75,7 +83,7 @@ Future<FitReport> pumpFitScreen(
   required FitDevice device,
   double textScale = 1.0,
   double minFontSize = 11,
-  Set<FitCheck> checks = _allChecks,
+  Set<FitCheck> checks = FitCheck.defaults,
 }) async {
   tester.view.physicalSize = device.size;
   tester.view.devicePixelRatio = 1;
@@ -130,6 +138,10 @@ Future<FitReport> pumpFitScreen(
     if (checks.contains(FitCheck.minFont)) {
       problems.addAll(_smallText(tester, minFontSize));
     }
+
+    if (checks.contains(FitCheck.truncatedText)) {
+      problems.addAll(_truncatedText(tester));
+    }
   } finally {
     FlutterError.onError = previousOnError;
     debugDefaultTargetPlatformOverride = null;
@@ -155,7 +167,7 @@ void testFitScale(
   List<FitDevice> devices = FitDevices.all,
   List<double> textScales = const [1.0, 1.3, 2.0],
   double minFontSize = 11,
-  Set<FitCheck> checks = _allChecks,
+  Set<FitCheck> checks = FitCheck.defaults,
   String? goldenDir,
   bool? skip,
 }) {
@@ -257,3 +269,20 @@ List<FitProblem> _smallText(WidgetTester tester, double minFontSize) {
 /// Icon fonts put glyphs in the Unicode private use area.
 bool _isIconGlyph(String text) =>
     text.runes.every((r) => r >= 0xE000 && r <= 0xF8FF);
+
+List<FitProblem> _truncatedText(WidgetTester tester) {
+  final problems = <FitProblem>[];
+  final seen = <String>{};
+  for (final paragraph
+      in tester.allRenderObjects.whereType<RenderParagraph>()) {
+    if (!paragraph.attached || paragraph.size.isEmpty) continue;
+    if (!paragraph.didExceedMaxLines) continue;
+    final text = paragraph.text.toPlainText().trim();
+    if (text.isEmpty || _isIconGlyph(text)) continue;
+    final snippet = text.length > 40 ? '${text.substring(0, 40)}...' : text;
+    final msg = '"$snippet" is cut off '
+        '(maxLines: ${paragraph.maxLines}, overflow: ${paragraph.overflow.name})';
+    if (seen.add(msg)) problems.add(FitProblem(FitCheck.truncatedText, msg));
+  }
+  return problems;
+}

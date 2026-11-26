@@ -1,3 +1,9 @@
+## 0.11.1
+
+* README: link to the live playground
+  (https://arahimli.github.io/fit_scale_playground/), which shows
+  flutter_screenutil and fit_scale side by side per device and text size.
+
 ## 0.11.0
 
 * Flutter DevTools extension (`extension/devtools`): a `fit_scale` tab with

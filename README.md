@@ -2,6 +2,10 @@
 
 [![CI](https://github.com/arahimli/fit_scale/actions/workflows/ci.yml/badge.svg)](https://github.com/arahimli/fit_scale/actions/workflows/ci.yml)
 
+**Try it live:** [fit_scale playground](https://arahimli.github.io/fit_scale_playground/)
+renders the same screen with flutter_screenutil and with fit_scale side by
+side, on the device and system text size you pick.
+
 Responsive sizing for Flutter that does not break on small, large or rotated
 screens — and a test harness that proves it for every screen you ship.
 

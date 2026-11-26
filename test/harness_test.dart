@@ -23,7 +23,8 @@ void main() {
       );
       final checks = report.problems.map((p) => p.check).toSet();
       expect(report.passed, isFalse);
-      expect(checks, {FitCheck.overflow, FitCheck.tapTargets, FitCheck.minFont});
+      expect(
+          checks, {FitCheck.overflow, FitCheck.tapTargets, FitCheck.minFont});
       expect(report.toString(), contains('android_compact 360x640'));
       expect(report.problems.where((p) => p.check == FitCheck.tapTargets),
           hasLength(1));

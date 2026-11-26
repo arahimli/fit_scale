@@ -1,5 +1,7 @@
 # fit_scale
 
+[![CI](https://github.com/arahimli/fit_scale/actions/workflows/ci.yml/badge.svg)](https://github.com/arahimli/fit_scale/actions/workflows/ci.yml)
+
 Responsive sizing for Flutter that does not break on small, large or rotated
 screens — and a test harness that proves it for every screen you ship.
 

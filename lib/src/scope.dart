@@ -87,9 +87,8 @@ abstract final class FitScale {
   }
 
   /// The nearest [FitScaleData], or null.
-  static FitScaleData? maybeOf(BuildContext context) => context
-      .dependOnInheritedWidgetOfExactType<_FitScaleInherited>()
-      ?.data;
+  static FitScaleData? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_FitScaleInherited>()?.data;
 }
 
 extension FitScaleContext on BuildContext {

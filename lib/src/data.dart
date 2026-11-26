@@ -27,8 +27,9 @@ class FitScaleData {
     final design = config.designSize;
     assert(!design.isEmpty, 'designSize must not be empty');
 
-    double clamp(double v) =>
-        v.isFinite ? v.clamp(config.minScale, config.maxScale) : config.minScale;
+    double clamp(double v) => v.isFinite
+        ? v.clamp(config.minScale, config.maxScale)
+        : config.minScale;
 
     // Uniform and font factors use the shortest side, so they do not
     // jump when the device rotates.

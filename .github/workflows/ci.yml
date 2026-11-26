@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Flutter ${{ matrix.flutter }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Lowest version allowed by pubspec.yaml, and the latest stable.
+        flutter: ['3.24.5', 'stable']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ matrix.flutter == 'stable' && '' || matrix.flutter }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Format
+        if: matrix.flutter == 'stable'
+        run: dart format --output=none --set-exit-if-changed lib test example/lib
+
+      - run: flutter analyze
+
+      - run: flutter test
+
+      - name: Analyze example
+        working-directory: example
+        run: |
+          flutter pub get
+          flutter analyze
+
+      - name: Publish dry run
+        if: matrix.flutter == 'stable'
+        run: flutter pub publish --dry-run

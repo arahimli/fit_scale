@@ -12,14 +12,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Lowest version allowed by pubspec.yaml, and the latest stable.
-        flutter: ['3.24.5', 'stable']
+        # Lowest version allowed by pubspec.yaml, and the latest stable
+        # (an empty version means latest on the channel).
+        include:
+          - flutter: '3.24.5'
+            version: '3.24.5'
+          - flutter: stable
+            version: ''
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: ${{ matrix.flutter == 'stable' && '' || matrix.flutter }}
+          flutter-version: ${{ matrix.version }}
           channel: stable
           cache: true
 

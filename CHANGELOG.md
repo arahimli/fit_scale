@@ -1,3 +1,14 @@
+## 0.5.0
+
+* New `FitDebugOverlay`: outlines tap targets below the platform minimum
+  (red), text drawn below `minFontSize` (purple) and text cut off by
+  `maxLines` (orange) on top of the running app, plus a panel with the
+  window class, size, scale factors and system text scale. Off in release
+  builds by default, scans after each frame without requesting frames,
+  touches pass through. `onProblems` reports changes.
+* The text checks now live in one place shared by the harness and the
+  overlay; harness messages are unchanged.
+
 ## 0.4.0
 
 * Breakpoints after Material 3's window size classes: `FitWindowClass`

@@ -58,6 +58,9 @@ text-size combinations fail, against 24 of 24 with linear scaling.
 - **Layouts per window class.** `fit.when`, `fit.pick` and `FitLayout`
   switch layouts at Material 3's window size classes, by screen or by
   pane, and rebuild only when the class changes.
+- **Live debug overlay.** `FitDebugOverlay` outlines small tap targets,
+  small text and cut-off text on top of the running app, with the same
+  thresholds as the test harness.
 - **Test harness.** `testFitScale` renders a screen on 11 device sizes × 3
   system text sizes and fails on overflow, small tap targets and tiny text.
 - **Not tied to Material.** The library imports only
@@ -128,6 +131,7 @@ class CheckoutPage extends StatelessWidget {
 | `fit.when(compact:, medium:, ...)` | a different layout per window class |
 | `fit.pick(compact:, medium:, ...)` | a different value per window class |
 | `FitLayout(compact:, medium:, ...)` | the same as a widget, rebuilding only on class change |
+| `FitDebugOverlay(child:)` | live outlines of problems while you develop |
 
 ### FitText
 
@@ -219,6 +223,43 @@ FitScaleConfig(
   minTapTarget: null, // null: 44 on iOS, 48 elsewhere
 )
 ```
+
+## Debug overlay
+
+The harness finds problems in tests; `FitDebugOverlay` shows the same
+problems on the running app while you work:
+
+```dart
+FitScaleScope(
+  config: const FitScaleConfig(designSize: Size(360, 690)),
+  child: FitDebugOverlay(child: MaterialApp(home: CheckoutPage())),
+)
+```
+
+| Outline | Problem | Same check as |
+|---|---|---|
+| red | tap target below 48×48 (Android) or 44×44 (iOS) | `FitCheck.tapTargets` |
+| purple | text drawn below `minFontSize` (11 px) | `FitCheck.minFont` |
+| orange | text cut off by `maxLines` | `FitCheck.truncatedText` |
+
+Overflow is not repeated: Flutter already draws its striped bar. Both use
+one implementation of the text checks, so what is outlined on screen is
+what a test would report.
+
+A panel in the corner shows the window class, screen size, scale factors
+and system text scale; tap it to collapse it. Put the overlay inside
+`FitScaleScope` so the panel can read the factors.
+
+![FitDebugOverlay on the flutter_screenutil screen and on the fit_scale screen](https://raw.githubusercontent.com/arahimli/fit_scale/main/doc/screenshots/fit_debug_overlay.png)
+
+- `enabled` defaults to `kDebugMode`; in release builds the overlay is
+  just its child. While on, it keeps the semantics tree alive to find tap
+  targets and scans after each frame.
+- It does not ask for frames of its own and repaints only when the list
+  of problems changes. Touches go straight through to the app.
+- `onProblems` gets the full list whenever it changes, for logging.
+- `minFontSize`, `minTapTarget`, `showPanel`, `panelAlignment` and
+  `panelTextStyle` (the panel sits above your theme) can be changed.
 
 ## Testing your screens
 

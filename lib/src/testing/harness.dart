@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meta/meta.dart';
 
+import '../checks.dart';
 import 'devices.dart';
 
 /// What the harness checks on every device and text size.
@@ -235,54 +236,17 @@ Future<void> loadFitScaleTestFonts() async {
       .load();
 }
 
-List<FitProblem> _smallText(WidgetTester tester, double minFontSize) {
-  final problems = <FitProblem>[];
-  final seen = <String>{};
-  for (final paragraph
-      in tester.allRenderObjects.whereType<RenderParagraph>()) {
-    if (!paragraph.attached || paragraph.size.isEmpty) continue;
-    void visit(InlineSpan span, double inherited) {
-      final size = span.style?.fontSize ?? inherited;
-      if (span is TextSpan) {
-        final text = span.text?.trim() ?? '';
-        if (text.isNotEmpty && !_isIconGlyph(text)) {
-          final px = paragraph.textScaler.scale(size);
-          if (px < minFontSize) {
-            final snippet =
-                text.length > 40 ? '${text.substring(0, 40)}...' : text;
-            final msg = '"$snippet" renders at ${px.toStringAsFixed(1)} px, '
-                'below $minFontSize';
-            if (seen.add(msg)) problems.add(FitProblem(FitCheck.minFont, msg));
-          }
-        }
-        for (final child in span.children ?? const <InlineSpan>[]) {
-          visit(child, size);
-        }
-      }
-    }
+List<FitProblem> _smallText(WidgetTester tester, double minFontSize) => [
+      for (final issue in smallText(
+        tester.allRenderObjects.whereType<RenderParagraph>(),
+        minFontSize,
+      ))
+        FitProblem(FitCheck.minFont, issue.message),
+    ];
 
-    visit(paragraph.text, 14);
-  }
-  return problems;
-}
-
-/// Icon fonts put glyphs in the Unicode private use area.
-bool _isIconGlyph(String text) =>
-    text.runes.every((r) => r >= 0xE000 && r <= 0xF8FF);
-
-List<FitProblem> _truncatedText(WidgetTester tester) {
-  final problems = <FitProblem>[];
-  final seen = <String>{};
-  for (final paragraph
-      in tester.allRenderObjects.whereType<RenderParagraph>()) {
-    if (!paragraph.attached || paragraph.size.isEmpty) continue;
-    if (!paragraph.didExceedMaxLines) continue;
-    final text = paragraph.text.toPlainText().trim();
-    if (text.isEmpty || _isIconGlyph(text)) continue;
-    final snippet = text.length > 40 ? '${text.substring(0, 40)}...' : text;
-    final msg = '"$snippet" is cut off '
-        '(maxLines: ${paragraph.maxLines}, overflow: ${paragraph.overflow.name})';
-    if (seen.add(msg)) problems.add(FitProblem(FitCheck.truncatedText, msg));
-  }
-  return problems;
-}
+List<FitProblem> _truncatedText(WidgetTester tester) => [
+      for (final issue in truncatedText(
+        tester.allRenderObjects.whereType<RenderParagraph>(),
+      ))
+        FitProblem(FitCheck.truncatedText, issue.message),
+    ];

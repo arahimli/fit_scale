@@ -11,7 +11,9 @@ class ExampleApp extends StatelessWidget {
     return const FitScaleScope(
       // The frame your designer drew on.
       config: FitScaleConfig(designSize: Size(360, 690)),
-      child: MaterialApp(home: CheckoutPage()),
+      // Outlines small tap targets and text while you develop; off in
+      // release builds.
+      child: FitDebugOverlay(child: MaterialApp(home: CheckoutPage())),
     );
   }
 }

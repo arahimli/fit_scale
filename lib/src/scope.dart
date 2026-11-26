@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 // Needed on Flutter 3.24, where foundation.dart does not export @internal.
@@ -7,6 +9,7 @@ import 'package:meta/meta.dart';
 import 'breakpoints.dart';
 import 'config.dart';
 import 'data.dart';
+import 'hinge.dart';
 
 /// Provides [FitScaleData] to everything below it.
 ///
@@ -56,7 +59,10 @@ class _FitScaleScopeState extends State<FitScaleScope> {
   Widget build(BuildContext context) {
     final screen = MediaQuery.sizeOf(context);
     if (!widget.useLayoutSize) {
-      final data = _data(screen);
+      final data = _data(
+        screen,
+        displayFeatures: MediaQuery.displayFeaturesOf(context),
+      );
       _publish(context, data);
       return _FitScaleInherited(data: data, child: widget.child);
     }
@@ -72,10 +78,15 @@ class _FitScaleScopeState extends State<FitScaleScope> {
     );
   }
 
-  FitScaleData _data(Size size) => FitScaleData(
+  FitScaleData _data(
+    Size size, {
+    List<ui.DisplayFeature> displayFeatures = const [],
+  }) =>
+      FitScaleData(
         config: widget.config,
         size: size,
         platform: defaultTargetPlatform,
+        displayFeatures: displayFeatures,
       );
 
   void _publish(BuildContext context, FitScaleData data) {
@@ -97,7 +108,7 @@ class _FitScaleScopeState extends State<FitScaleScope> {
   }
 }
 
-enum _Aspect { classes }
+enum _Aspect { classes, hinge }
 
 class _FitScaleInherited extends InheritedModel<_Aspect> {
   const _FitScaleInherited({required this.data, required super.child});
@@ -114,9 +125,10 @@ class _FitScaleInherited extends InheritedModel<_Aspect> {
     _FitScaleInherited old,
     Set<_Aspect> dependencies,
   ) =>
-      dependencies.contains(_Aspect.classes) &&
-      (data.windowClass != old.data.windowClass ||
-          data.heightClass != old.data.heightClass);
+      (dependencies.contains(_Aspect.classes) &&
+          (data.windowClass != old.data.windowClass ||
+              data.heightClass != old.data.heightClass)) ||
+      (dependencies.contains(_Aspect.hinge) && data.hinge != old.data.hinge);
 }
 
 /// Lookup helpers for [FitScaleData].
@@ -150,10 +162,18 @@ abstract final class FitScale {
   static FitHeightClass heightClassOf(BuildContext context) =>
       _classesOf(context).heightClass;
 
-  static FitScaleData _classesOf(BuildContext context) {
+  /// The fold or hinge splitting the screen, or null. Rebuilds the
+  /// caller only when it changes (unfolding, posture change).
+  static FitHinge? hingeOf(BuildContext context) =>
+      _aspectOf(context, _Aspect.hinge).hinge;
+
+  static FitScaleData _classesOf(BuildContext context) =>
+      _aspectOf(context, _Aspect.classes);
+
+  static FitScaleData _aspectOf(BuildContext context, _Aspect aspect) {
     final data = InheritedModel.inheritFrom<_FitScaleInherited>(
       context,
-      aspect: _Aspect.classes,
+      aspect: aspect,
     )?.data;
     if (data == null) {
       throw FlutterError.fromParts([

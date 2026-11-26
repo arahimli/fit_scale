@@ -1,3 +1,21 @@
+## 0.7.0
+
+* Foldables. `FitHinge` (`fit.hinge`, `FitScale.hingeOf`): the fold or
+  hinge splitting the screen, with its bounds and posture (book, tabletop,
+  flat). Only separating features count, as in Flutter: a half-open fold
+  or a hinge with a width.
+* `FitHingeLayout`: `start` and `end` panes on either side of the fold,
+  `single` otherwise; right-to-left aware, and correct when it does not
+  start at the screen origin.
+* Harness: `FitDevices.foldables` (Fold in book posture, Flip in tabletop
+  posture, Surface Duo), not in `FitDevices.all`; `FitDevice.displayFeatures`;
+  new default check `FitCheck.hingeOverlap` for text lines and tap
+  targets lying across a fold. It only fires on devices with one.
+* `FitDebugOverlay` draws the fold or hinge and outlines what crosses it
+  (teal, `FitDebugProblemKind.hingeOverlap`); the panel shows the posture.
+* `FitScaleData` has a `hinge` field and its constructor takes
+  `displayFeatures`.
+
 ## 0.6.0
 
 * `testFitScale(reportDir: ...)` writes a report when the group finishes,

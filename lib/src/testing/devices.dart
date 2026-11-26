@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/widgets.dart';
 
 /// A device to render a screen on: logical size and platform.
@@ -7,6 +9,7 @@ class FitDevice {
     this.name,
     this.size, {
     this.platform = TargetPlatform.android,
+    this.displayFeatures = const [],
   });
 
   final String name;
@@ -18,6 +21,12 @@ class FitDevice {
   /// platform the app thinks it runs on.
   final TargetPlatform platform;
 
+  /// Folds, hinges and cutouts, in logical pixels, as the device reports
+  /// them through `MediaQuery.displayFeaturesOf`.
+  final List<ui.DisplayFeature> displayFeatures;
+
+  /// The same device rotated. Display features are dropped: they move
+  /// when the device rotates.
   FitDevice get landscape => FitDevice(
         '${name}_landscape',
         Size(size.height, size.width),
@@ -68,6 +77,50 @@ abstract final class FitDevices {
 
   /// Medium and expanded window classes, for breakpoint layouts.
   static const tablets = [foldOpen, ipadMini, ipadPro13];
+
+  /// Galaxy Z Fold unfolded and half open: a vertical fold, book posture.
+  static const foldBook = FitDevice(
+    'fold_book',
+    Size(673, 841),
+    displayFeatures: [
+      ui.DisplayFeature(
+        bounds: Rect.fromLTWH(336.5, 0, 0, 841),
+        type: ui.DisplayFeatureType.fold,
+        state: ui.DisplayFeatureState.postureHalfOpened,
+      ),
+    ],
+  );
+
+  /// Galaxy Z Flip half open on a table: a horizontal fold, tabletop
+  /// posture.
+  static const flipTabletop = FitDevice(
+    'flip_tabletop',
+    Size(412, 915),
+    displayFeatures: [
+      ui.DisplayFeature(
+        bounds: Rect.fromLTWH(0, 457.5, 412, 0),
+        type: ui.DisplayFeatureType.fold,
+        state: ui.DisplayFeatureState.postureHalfOpened,
+      ),
+    ],
+  );
+
+  /// Surface Duo spanned across both screens: a 34 px physical hinge.
+  static const surfaceDuo = FitDevice(
+    'surface_duo',
+    Size(1114, 720),
+    displayFeatures: [
+      ui.DisplayFeature(
+        bounds: Rect.fromLTWH(540, 0, 34, 720),
+        type: ui.DisplayFeatureType.hinge,
+        state: ui.DisplayFeatureState.postureFlat,
+      ),
+    ],
+  );
+
+  /// Devices with a fold or hinge splitting the screen. Not in [all]:
+  /// add them where your app supports foldables.
+  static const foldables = [foldBook, flipTabletop, surfaceDuo];
 
   static const all = [
     ...small,

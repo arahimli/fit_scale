@@ -1,9 +1,11 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/widgets.dart';
 
 import 'breakpoints.dart';
 import 'config.dart';
+import 'hinge.dart';
 
 /// Scale factors for one screen (or one pane) size.
 ///
@@ -18,12 +20,14 @@ class FitScaleData {
     required this.scaleHeight,
     required this.scale,
     required this.fontScale,
+    required this.hinge,
   });
 
   factory FitScaleData({
     required FitScaleConfig config,
     required Size size,
     TargetPlatform platform = TargetPlatform.android,
+    List<ui.DisplayFeature> displayFeatures = const [],
   }) {
     final design = config.designSize;
     assert(!design.isEmpty, 'designSize must not be empty');
@@ -46,6 +50,7 @@ class FitScaleData {
       fontScale: shortest.isFinite
           ? shortest.clamp(config.minFontScale, config.maxFontScale)
           : config.minFontScale,
+      hinge: FitHinge.fromDisplayFeatures(displayFeatures),
     );
   }
 
@@ -68,6 +73,10 @@ class FitScaleData {
   /// Clamped factor for font sizes. The system text scale is applied
   /// on top of this by Flutter, so do not multiply it in yourself.
   final double fontScale;
+
+  /// The fold or hinge splitting this screen, or null. Only the root
+  /// scope sets it: a `useLayoutSize` pane has its own coordinates.
+  final FitHinge? hinge;
 
   /// A horizontal design size (padding, widths).
   double w(double v) => v * scaleWidth;
@@ -157,10 +166,11 @@ class FitScaleData {
       other is FitScaleData &&
       other.config == config &&
       other.size == size &&
-      other.platform == platform;
+      other.platform == platform &&
+      other.hinge == hinge;
 
   @override
-  int get hashCode => Object.hash(config, size, platform);
+  int get hashCode => Object.hash(config, size, platform, hinge);
 
   @override
   String toString() => 'FitScaleData(size: $size, w: '

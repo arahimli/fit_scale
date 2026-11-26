@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meta/meta.dart';
 
 import '../checks.dart';
+import '../hinge.dart';
 import 'devices.dart';
 import 'report.dart';
 
@@ -29,10 +30,14 @@ enum FitCheck {
   ///
   /// Not in [defaults]: many apps cut long names on purpose. Add it with
   /// `checks: {...FitCheck.defaults, FitCheck.truncatedText}`.
-  truncatedText;
+  truncatedText,
+
+  /// No text line or tap target lying across a fold or hinge. Only does
+  /// anything on devices with one, such as [FitDevices.foldables].
+  hingeOverlap;
 
   /// The checks run when none are given.
-  static const defaults = {overflow, tapTargets, minFont};
+  static const defaults = {overflow, tapTargets, minFont, hingeOverlap};
 }
 
 /// One thing that went wrong on one device.
@@ -91,6 +96,9 @@ Future<FitReport> pumpFitScreen(
   tester.view.physicalSize = device.size;
   tester.view.devicePixelRatio = 1;
   tester.platformDispatcher.textScaleFactorTestValue = textScale;
+  if (device.displayFeatures.isNotEmpty) {
+    tester.view.displayFeatures = device.displayFeatures;
+  }
   addTearDown(tester.view.reset);
   addTearDown(tester.platformDispatcher.clearAllTestValues);
 
@@ -144,6 +152,25 @@ Future<FitReport> pumpFitScreen(
 
     if (checks.contains(FitCheck.truncatedText)) {
       problems.addAll(_truncatedText(tester));
+    }
+
+    final hinge = FitHinge.fromDisplayFeatures(device.displayFeatures);
+    if (hinge != null && checks.contains(FitCheck.hingeOverlap)) {
+      final root = tester
+          .renderObject(find.byKey(fitScaleRootKey))
+          .owner
+          ?.semanticsOwner
+          ?.rootSemanticsNode;
+      final targets = root == null
+          ? const <TapTarget>[]
+          : tapTargets(root, devicePixelRatio: 1, screen: device.size);
+      for (final issue in hingeOverlaps(
+        hinge,
+        tester.allRenderObjects.whereType<RenderParagraph>(),
+        targets,
+      )) {
+        problems.add(FitProblem(FitCheck.hingeOverlap, issue.message));
+      }
     }
   } finally {
     FlutterError.onError = previousOnError;

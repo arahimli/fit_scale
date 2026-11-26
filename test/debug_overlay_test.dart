@@ -80,7 +80,14 @@ void main() {
 
     expect(calls, hasLength(1));
     final byKind = {for (final p in calls.single) p.kind: p};
-    expect(byKind.keys, unorderedEquals(FitDebugProblemKind.values));
+    // No fold on this screen; hinge overlaps are tested in hinge_test.
+    expect(
+        byKind.keys,
+        unorderedEquals([
+          FitDebugProblemKind.tapTarget,
+          FitDebugProblemKind.smallText,
+          FitDebugProblemKind.truncatedText,
+        ]));
 
     expect(byKind[FitDebugProblemKind.tapTarget]!.rect,
         tester.getRect(find.byKey(tapKey)));

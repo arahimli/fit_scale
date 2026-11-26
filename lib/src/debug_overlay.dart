@@ -4,6 +4,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 import 'checks.dart';
+import 'hinge.dart';
 import 'scope.dart';
 
 /// Kind of problem [FitDebugOverlay] highlights.
@@ -16,6 +17,9 @@ enum FitDebugProblemKind {
 
   /// Text cut off by `maxLines`. Orange.
   truncatedText,
+
+  /// Text or a tap target lying across a fold or hinge. Teal.
+  hingeOverlap,
 }
 
 /// One problem found on screen, with where it is.
@@ -51,7 +55,9 @@ class FitDebugProblem {
 ///
 /// * red: a tappable element smaller than 48×48 (Android) or 44×44 (iOS),
 /// * purple: text drawn smaller than [minFontSize],
-/// * orange: text cut off by `maxLines`.
+/// * orange: text cut off by `maxLines`,
+/// * teal: text or a tap target across a fold or hinge, which is drawn
+///   as a dark band.
 ///
 /// Overflow is not repeated: Flutter already draws its striped bar.
 ///
@@ -107,6 +113,8 @@ class _FitDebugOverlayState extends State<FitDebugOverlay> {
   final _childKey = GlobalKey();
   SemanticsHandle? _semantics;
   List<FitDebugProblem> _problems = const [];
+  FitHinge? _hinge;
+  Rect? _hingeRect;
   bool _collapsed = false;
   bool _scanScheduled = false;
 
@@ -165,8 +173,22 @@ class _FitDebugOverlayState extends State<FitDebugOverlay> {
         ).shift(-origin);
 
     final paragraphs = paragraphsBelow(root).toList();
+    final targets = _targets(root);
+    final hinge = FitHinge.fromDisplayFeatures(
+      MediaQuery.maybeDisplayFeaturesOf(context) ?? const [],
+    );
+    final min = _minTap;
     final found = <FitDebugProblem>[
-      ..._tapTargets(root, origin),
+      for (final t in targets)
+        if (!t.cutByScreenEdge &&
+            (t.rect.width + 0.01 < min || t.rect.height + 0.01 < min))
+          FitDebugProblem(
+            FitDebugProblemKind.tapTarget,
+            t.rect.shift(-origin),
+            'tap target ${t.rect.width.toStringAsFixed(0)}x'
+            '${t.rect.height.toStringAsFixed(0)}, below '
+            '${min.toStringAsFixed(0)}x${min.toStringAsFixed(0)}',
+          ),
       for (final issue in smallText(paragraphs, widget.minFontSize))
         FitDebugProblem(
           FitDebugProblemKind.smallText,
@@ -179,11 +201,24 @@ class _FitDebugOverlayState extends State<FitDebugOverlay> {
           boxOf(issue.paragraph),
           issue.message,
         ),
+      if (hinge != null)
+        for (final issue in hingeOverlaps(hinge, paragraphs, targets))
+          FitDebugProblem(
+            FitDebugProblemKind.hingeOverlap,
+            issue.rect.shift(-origin),
+            issue.message,
+          ),
     ];
+    final hingeRect = hinge?.bounds.shift(-origin);
 
-    if (listEquals(found, _problems)) return;
-    setState(() => _problems = List.unmodifiable(found));
-    widget.onProblems?.call(_problems);
+    if (listEquals(found, _problems) && hingeRect == _hingeRect) return;
+    final problemsChanged = !listEquals(found, _problems);
+    setState(() {
+      _problems = List.unmodifiable(found);
+      _hinge = hinge;
+      _hingeRect = hingeRect;
+    });
+    if (problemsChanged) widget.onProblems?.call(_problems);
   }
 
   double get _minTap =>
@@ -193,64 +228,16 @@ class _FitDebugOverlayState extends State<FitDebugOverlay> {
         _ => 48.0,
       };
 
-  /// Same rule as Flutter's tap-target accessibility guidelines.
-  Iterable<FitDebugProblem> _tapTargets(RenderObject root, Offset origin) {
+  List<TapTarget> _targets(RenderObject root) {
     final rootNode = root.owner?.semanticsOwner?.rootSemanticsNode;
     if (rootNode == null) return const [];
     final view = View.maybeOf(context);
     final ratio = view?.devicePixelRatio ?? 1;
-    final screen = (view?.physicalSize ?? Size.infinite) / ratio;
-    final min = _minTap;
-    final problems = <FitDebugProblem>[];
-
-    void visit(SemanticsNode node) {
-      node.visitChildren((child) {
-        visit(child);
-        return true;
-      });
-      if (node.isMergedIntoParent) return;
-      final data = node.getSemanticsData();
-      // hasFlag is deprecated from Flutter 3.32, but its replacement
-      // (flagsCollection) does not exist on 3.24, the minimum supported.
-      // ignore: deprecated_member_use
-      if (data.hasFlag(SemanticsFlag.isHidden)) return;
-      if (!data.hasAction(SemanticsAction.tap) &&
-          !data.hasAction(SemanticsAction.longPress)) {
-        return;
-      }
-      var bounds = node.rect;
-      for (SemanticsNode? n = node; n != null; n = n.parent) {
-        final t = n.transform;
-        if (t != null) bounds = MatrixUtils.transformRect(t, bounds);
-      }
-      final rect = Rect.fromLTRB(
-        bounds.left / ratio,
-        bounds.top / ratio,
-        bounds.right / ratio,
-        bounds.bottom / ratio,
-      );
-      if (rect.isEmpty) return;
-      // Elements cut by the screen edge are skipped, as in Flutter's
-      // guideline: their visible part says nothing about their size.
-      if (rect.left < 0 ||
-          rect.top < 0 ||
-          rect.right > screen.width + 0.01 ||
-          rect.bottom > screen.height + 0.01) {
-        return;
-      }
-      if (rect.width + 0.01 < min || rect.height + 0.01 < min) {
-        problems.add(FitDebugProblem(
-          FitDebugProblemKind.tapTarget,
-          rect.shift(-origin),
-          'tap target ${rect.width.toStringAsFixed(0)}x'
-          '${rect.height.toStringAsFixed(0)}, below '
-          '${min.toStringAsFixed(0)}x${min.toStringAsFixed(0)}',
-        ));
-      }
-    }
-
-    visit(rootNode);
-    return problems;
+    return tapTargets(
+      rootNode,
+      devicePixelRatio: ratio,
+      screen: (view?.physicalSize ?? Size.infinite) / ratio,
+    );
   }
 
   @override
@@ -263,7 +250,9 @@ class _FitDebugOverlayState extends State<FitDebugOverlay> {
         KeyedSubtree(key: _childKey, child: widget.child),
         Positioned.fill(
           child: IgnorePointer(
-            child: CustomPaint(painter: _ProblemPainter(_problems)),
+            child: CustomPaint(
+              painter: _ProblemPainter(_problems, _hingeRect),
+            ),
           ),
         ),
         if (widget.showPanel)
@@ -300,6 +289,9 @@ class _FitDebugOverlayState extends State<FitDebugOverlay> {
               '${counts[FitDebugProblemKind.smallText]} small text',
             if (counts[FitDebugProblemKind.truncatedText]! > 0)
               '${counts[FitDebugProblemKind.truncatedText]} cut text',
+            if (counts[FitDebugProblemKind.hingeOverlap]! > 0)
+              '${counts[FitDebugProblemKind.hingeOverlap]} on '
+                  '${_hinge?.posture == FitPosture.flat ? 'hinge' : 'fold'}',
           ].join(' · ');
 
     final lines = _collapsed
@@ -307,7 +299,9 @@ class _FitDebugOverlayState extends State<FitDebugOverlay> {
         : [
             '${fit?.windowClass.name ?? 'no FitScaleScope'} · '
                 '${size.width.toStringAsFixed(0)}×'
-                '${size.height.toStringAsFixed(0)}',
+                '${size.height.toStringAsFixed(0)}'
+                '${_hinge == null ? '' : ' · ${_hinge!.posture.name} '
+                    '${_hinge!.posture == FitPosture.flat ? 'hinge' : 'fold'}'}',
             if (fit != null)
               'w ${f(fit.scaleWidth)}  h ${f(fit.scaleHeight)}  '
                   'r ${f(fit.scale)}  sp ${f(fit.fontScale)}',
@@ -353,18 +347,30 @@ class _FitDebugOverlayState extends State<FitDebugOverlay> {
 }
 
 class _ProblemPainter extends CustomPainter {
-  _ProblemPainter(this.problems);
+  _ProblemPainter(this.problems, this.hinge);
 
   final List<FitDebugProblem> problems;
+  final Rect? hinge;
 
   static const _colors = {
     FitDebugProblemKind.tapTarget: Color(0xFFE53935),
     FitDebugProblemKind.smallText: Color(0xFF8E24AA),
     FitDebugProblemKind.truncatedText: Color(0xFFFB8C00),
+    FitDebugProblemKind.hingeOverlap: Color(0xFF00897B),
   };
 
   @override
   void paint(Canvas canvas, Size size) {
+    final h = hinge;
+    if (h != null) {
+      // A fold can be zero pixels wide: draw at least a 4 px band.
+      final band = h.width < 4 && h.height > h.width
+          ? Rect.fromCenter(center: h.center, width: 4, height: h.height)
+          : h.height < 4 && h.width > h.height
+              ? Rect.fromCenter(center: h.center, width: h.width, height: 4)
+              : h;
+      canvas.drawRect(band, Paint()..color = const Color(0x80202124));
+    }
     for (final p in problems) {
       final color = _colors[p.kind]!;
       canvas
@@ -381,5 +387,5 @@ class _ProblemPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ProblemPainter old) =>
-      !listEquals(old.problems, problems);
+      old.hinge != hinge || !listEquals(old.problems, problems);
 }

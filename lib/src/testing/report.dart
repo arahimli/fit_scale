@@ -74,6 +74,7 @@ class FitScreenReport {
     FitCheck.tapTargets: 'tap',
     FitCheck.minFont: 'font',
     FitCheck.truncatedText: 'cut',
+    FitCheck.hingeOverlap: 'hinge',
   };
 
   /// "2 overflow · 1 tap" for a failed case.

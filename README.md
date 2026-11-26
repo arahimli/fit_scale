@@ -58,6 +58,9 @@ text-size combinations fail, against 24 of 24 with linear scaling.
 - **Layouts per window class.** `fit.when`, `fit.pick` and `FitLayout`
   switch layouts at Material 3's window size classes, by screen or by
   pane, and rebuild only when the class changes.
+- **Foldables.** `fit.hinge` and `FitHingeLayout` put content on either
+  side of a half-open fold or a hinge; the harness and the overlay flag
+  anything lying across one.
 - **Live debug overlay.** `FitDebugOverlay` outlines small tap targets,
   small text and cut-off text on top of the running app, with the same
   thresholds as the test harness.
@@ -132,6 +135,7 @@ class CheckoutPage extends StatelessWidget {
 | `fit.when(compact:, medium:, ...)` | a different layout per window class |
 | `fit.pick(compact:, medium:, ...)` | a different value per window class |
 | `FitLayout(compact:, medium:, ...)` | the same as a widget, rebuilding only on class change |
+| `FitHingeLayout(single:, start:, end:)` | panes on either side of a fold or hinge |
 | `FitDebugOverlay(child:)` | live outlines of problems while you develop |
 
 ### FitText
@@ -212,6 +216,60 @@ expanded: 3)` returns values instead of widgets.
 
 ![One stretched column vs two columns with FitLayout on a phone in landscape](https://raw.githubusercontent.com/arahimli/fit_scale/main/doc/screenshots/fit_layout_landscape.png)
 
+### Foldables
+
+A half-open foldable or a dual-screen device has a line through the
+screen: text and buttons on it are hard to read and tap. Flutter reports
+it through `MediaQuery.displayFeatures` (Android only; there are no
+foldable iPhones). fit_scale turns that into one value:
+
+```dart
+final hinge = context.fit.hinge; // null on an ordinary screen
+hinge?.posture; // book, tabletop or flat (a physical hinge)
+hinge?.bounds;  // where it is
+```
+
+Only separating features count, by Flutter's own rule: a fold that is
+half open, or a hinge with a width. A fully opened fold leaves the screen
+one surface, so `hinge` is null and nothing changes.
+
+```dart
+FitHingeLayout(
+  single: (_) => const OrderColumn(),
+  start: (_) => const OrderSummary(), // left, or top in tabletop posture
+  end: (_) => const OrderActions(),   // right, or the half on the table
+)
+```
+
+`start` and `end` are placed exactly either side of the fold, with
+nothing on a hinge (right to left: `start` on the right). It does not
+need to fill the screen: below an app bar it still splits at the fold.
+
+The harness has `FitDevices.foldables` (Galaxy Z Fold in book posture,
+Galaxy Z Flip in tabletop posture, Surface Duo spanned) and a
+`FitCheck.hingeOverlap` check, in the defaults, that fails when a line
+of text or a tap target lies across the fold. It only fires on devices
+with one, so adding it changed nothing for other devices. Foldables are
+not in `FitDevices.all`; add them where your app supports them:
+
+```dart
+testFitScale(
+  'checkout',
+  () => const MyApp(home: CheckoutPage()),
+  devices: [...FitDevices.all, ...FitDevices.foldables],
+);
+```
+
+Measured on the order screen: with `FitLayout` alone 4 of 9 foldable cases
+pass (5 items under the Surface Duo hinge, a tile on the Flip's fold, and
+the Fold passes only because the gap between columns happens to sit on
+the fold); with `FitHingeLayout` 9 of 9.
+
+![The order screen on a Flip in tabletop posture and on a Surface Duo, with FitLayout only and with FitHingeLayout](https://raw.githubusercontent.com/arahimli/fit_scale/main/doc/screenshots/fit_hinge_layout.png)
+
+These devices are simulated in tests by setting the view's display
+features; fit_scale has not been checked on physical foldables yet.
+
 ### Configuration
 
 ```dart
@@ -242,6 +300,7 @@ FitScaleScope(
 | red | tap target below 48×48 (Android) or 44×44 (iOS) | `FitCheck.tapTargets` |
 | purple | text drawn below `minFontSize` (11 px) | `FitCheck.minFont` |
 | orange | text cut off by `maxLines` | `FitCheck.truncatedText` |
+| teal | text or a tap target across a fold or hinge (drawn as a dark band) | `FitCheck.hingeOverlap` |
 
 Overflow is not repeated: Flutter already draws its striped bar. Both use
 one implementation of the text checks, so what is outlined on screen is
@@ -286,13 +345,13 @@ android_compact 360x640, text x1.3: 3 problem(s)
   - [minFont] "Prices include VAT" renders at 10.4 px, below 11.0
 ```
 
-Options: `devices` (`FitDevices.small`, `.phones`, `.tablets`, `.all` or your own
+Options: `devices` (`FitDevices.small`, `.phones`, `.tablets`, `.foldables`, `.all` or your own
 `FitDevice`), `textScales`, `minFontSize`, `checks`, and `goldenDir` to save a
 screenshot per case. For custom setup, call `pumpFitScreen` inside your own
 `testWidgets` and inspect the returned `FitReport`.
 
 `checks` defaults to `FitCheck.defaults` (overflow, tap targets, small
-text). `FitCheck.truncatedText` also reports text cut off by `maxLines`,
+text, and content across a fold on foldable devices). `FitCheck.truncatedText` also reports text cut off by `maxLines`,
 including a `FitText` that did not fit at its minimum. It is opt-in
 because many apps cut long names on purpose:
 

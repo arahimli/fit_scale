@@ -3,7 +3,7 @@ description: >-
   Clamped responsive sizing for Flutter. Layouts that do not overflow, shrink
   touch targets or distort shapes on small, large or rotated screens, plus a
   test harness that checks every screen across devices and text sizes.
-version: 0.6.0
+version: 0.7.0
 repository: https://github.com/arahimli/fit_scale
 issue_tracker: https://github.com/arahimli/fit_scale/issues
 screenshots:
@@ -23,6 +23,8 @@ screenshots:
     path: doc/screenshots/fit_debug_overlay.png
   - description: HTML report of a screen across 11 devices and 3 text sizes.
     path: doc/screenshots/fit_report.jpg
+  - description: FitHingeLayout on a Flip in tabletop posture and a Surface Duo.
+    path: doc/screenshots/fit_hinge_layout.png
 topics:
   - responsive
   - layout

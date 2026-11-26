@@ -13,7 +13,33 @@ void setScreen(WidgetTester tester, Size size) {
   addTearDown(tester.view.reset);
 }
 
+/// Const and reads nothing from the scope.
+class _Counter extends StatelessWidget {
+  const _Counter();
+
+  static var builds = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    builds++;
+    return const SizedBox();
+  }
+}
+
 void main() {
+  // This file never uses package:fit_scale/extensions.dart.
+  testWidgets('without extensions a resize does not rebuild the whole tree',
+      (tester) async {
+    setScreen(tester, const Size(360, 690));
+    _Counter.builds = 0;
+    await tester.pumpWidget(host(const FitScaleScope(child: _Counter())));
+    expect(_Counter.builds, 1);
+
+    tester.view.physicalSize = const Size(744, 1133);
+    await tester.pump();
+    expect(_Counter.builds, 1);
+  });
+
   testWidgets('context.fit without a scope explains the fix', (tester) async {
     await tester.pumpWidget(host(Builder(builder: (c) {
       c.fit;

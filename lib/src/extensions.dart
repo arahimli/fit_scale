@@ -38,7 +38,7 @@ extension FitScaleNum on num {
 }
 
 FitScaleData get _global {
-  final data = FitScale.global;
+  final data = FitScale.globalForExtensions();
   if (data == null) {
     throw FlutterError.fromParts([
       ErrorSummary('No root FitScaleScope found.'),

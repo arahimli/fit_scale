@@ -53,16 +53,26 @@ abstract final class FitDevices {
     platform: TargetPlatform.iOS,
   );
 
+  /// Galaxy Z Fold unfolded: the medium window class.
+  static const foldOpen = FitDevice('fold_open', Size(673, 841));
+
+  /// iPad Pro 13-inch in portrait: the expanded window class.
+  static const ipadPro13 =
+      FitDevice('ipad_pro13', Size(1032, 1376), platform: TargetPlatform.iOS);
+
   /// Where linear scaling breaks first.
   static const small = [foldCover, iphoneSe1, androidCompact, iphoneSe3];
 
   /// Common modern phones.
   static const phones = [iphone16Pro, pixel9, iphone16ProMax];
 
+  /// Medium and expanded window classes, for breakpoint layouts.
+  static const tablets = [foldOpen, ipadMini, ipadPro13];
+
   static const all = [
     ...small,
     ...phones,
-    ipadMini,
+    ...tablets,
     phoneLandscape,
   ];
 }

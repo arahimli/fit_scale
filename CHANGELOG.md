@@ -1,3 +1,20 @@
+## 0.4.0
+
+* Breakpoints after Material 3's window size classes: `FitWindowClass`
+  (compact < 600, medium, expanded ≥ 840, large ≥ 1200, extraLarge ≥ 1600),
+  `FitHeightClass`, `FitBreakpoints` in `FitScaleConfig`.
+* `fit.windowClass`, `fit.heightClass`, `fit.when(...)` and `fit.pick(...)`
+  with mobile-first fallback to the nearest narrower class.
+* `FitLayout`: a layout per window class that rebuilds only when the class
+  changes; `FitScale.windowClassOf` / `heightClassOf` for the same
+  dependency. Inside `useLayoutSize` scopes classes follow the pane.
+* Harness: `FitDevices.foldOpen` (673×841) and `FitDevices.ipadPro13`
+  (1032×1376), and `FitDevices.tablets`. **`FitDevices.all` now has 11
+  devices**, so `testFitScale` defines 33 tests per screen instead of 27.
+* Fix: the root scope rebuilt its whole subtree on every size change even
+  in apps that never use `package:fit_scale/extensions.dart`. It now does
+  so only once an extension has been read.
+
 ## 0.3.0
 
 * New `FitText`: text that shrinks only when it does not fit, never below

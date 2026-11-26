@@ -55,7 +55,10 @@ text-size combinations fail, against 24 of 24 with linear scaling.
   changes, and a nested `FitScaleScope(useLayoutSize: true)` scales a
   split-view pane by its own size. `56.w`-style extensions are available
   in a separate import for migrating from flutter_screenutil.
-- **Test harness.** `testFitScale` renders a screen on 9 device sizes × 3
+- **Layouts per window class.** `fit.when`, `fit.pick` and `FitLayout`
+  switch layouts at Material 3's window size classes, by screen or by
+  pane, and rebuild only when the class changes.
+- **Test harness.** `testFitScale` renders a screen on 11 device sizes × 3
   system text sizes and fails on overflow, small tap targets and tiny text.
 - **Not tied to Material.** The library imports only
   `package:flutter/widgets.dart`, so it is unaffected by the Material split
@@ -122,6 +125,9 @@ class CheckoutPage extends StatelessWidget {
 | `FitBox(height:, interactive:)` | instead of `SizedBox(height: x.h)` around text |
 | `FitSquare(size:)` | instead of `width: x.w, height: x.h` for squares |
 | `FitText(text, minFontSize:)` | text in a space that cannot grow |
+| `fit.when(compact:, medium:, ...)` | a different layout per window class |
+| `fit.pick(compact:, medium:, ...)` | a different value per window class |
+| `FitLayout(compact:, medium:, ...)` | the same as a widget, rebuilding only on class change |
 
 ### FitText
 
@@ -161,6 +167,46 @@ the 24.
 many lines as the height allows (an ellipsis then becomes a clip, because
 Flutter would otherwise cut the first line).
 
+### Breakpoints
+
+Scaling fixes sizes, not layouts: in landscape or on a tablet a phone
+layout is still one long column. Window classes follow Material 3, by
+width:
+
+| Class | Width | Typical device |
+|---|---|---|
+| `compact` | < 600 | phones in portrait |
+| `medium` | 600–839 | unfolded foldables, iPad mini |
+| `expanded` | 840–1199 | tablets, phones in landscape |
+| `large` | 1200–1599 | large tablets in landscape |
+| `extraLarge` | ≥ 1600 | desktop windows |
+
+```dart
+FitLayout(
+  compact: (_) => const OrderColumn(),
+  medium: (_) => const Row(children: [
+    Expanded(child: OrderSummary()),
+    Expanded(child: OrderActions()),
+  ]),
+)
+```
+
+Mobile first: a class without a builder falls back to the nearest
+narrower one, so this shows two columns on every class from `medium` up.
+`fit.when(...)` does the same inline, `fit.pick(compact: 1, medium: 2,
+expanded: 3)` returns values instead of widgets.
+
+- `FitLayout` and `FitScale.windowClassOf(context)` rebuild only when the
+  window or height class changes, not on every pixel of a resize.
+- Below `FitScaleScope(useLayoutSize: true)` the class follows the pane,
+  like a container query: a 430 px detail pane on a tablet is `compact`.
+- A phone in landscape is `expanded` by width but `FitHeightClass.compact`
+  by height (`fit.heightClass`), for choices such as full-screen dialogs.
+- Change the boundaries with
+  `FitScaleConfig(breakpoints: FitBreakpoints(medium: 500, ...))`.
+
+![One stretched column vs two columns with FitLayout on a phone in landscape](https://raw.githubusercontent.com/arahimli/fit_scale/main/doc/screenshots/fit_layout_landscape.png)
+
 ### Configuration
 
 ```dart
@@ -186,7 +232,9 @@ void main() {
 }
 ```
 
-This defines 27 tests (9 devices × text ×1.0, ×1.3, ×2.0). A failure lists
+This defines 33 tests (11 devices × text ×1.0, ×1.3, ×2.0): phones from a
+280 px foldable cover up, an unfolded foldable and two iPads for the medium
+and expanded classes, and a phone in landscape. A failure lists
 every problem found:
 
 ```
@@ -196,7 +244,7 @@ android_compact 360x640, text x1.3: 3 problem(s)
   - [minFont] "Prices include VAT" renders at 10.4 px, below 11.0
 ```
 
-Options: `devices` (`FitDevices.small`, `.phones`, `.all` or your own
+Options: `devices` (`FitDevices.small`, `.phones`, `.tablets`, `.all` or your own
 `FitDevice`), `textScales`, `minFontSize`, `checks`, and `goldenDir` to save a
 screenshot per case. For custom setup, call `pumpFitScreen` inside your own
 `testWidgets` and inspect the returned `FitReport`.

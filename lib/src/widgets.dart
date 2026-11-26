@@ -59,3 +59,51 @@ class FitSquare extends StatelessWidget {
     return SizedBox.square(dimension: context.fit.r(size), child: child);
   }
 }
+
+/// Picks a layout for the current window class.
+///
+/// Mobile first: a class without a builder uses the nearest narrower
+/// one, down to [compact]. This widget rebuilds only when the window or
+/// height class changes; the chosen builder gets its own context, so
+/// reading `context.fit` inside it does not change that.
+///
+/// ```dart
+/// FitLayout(
+///   compact: (_) => const OrderList(),
+///   expanded: (_) => const Row(children: [OrderList(), OrderDetail()]),
+/// )
+/// ```
+///
+/// Below a `FitScaleScope(useLayoutSize: true)` the class follows that
+/// pane's width, like a container query.
+class FitLayout extends StatelessWidget {
+  const FitLayout({
+    super.key,
+    required this.compact,
+    this.medium,
+    this.expanded,
+    this.large,
+    this.extraLarge,
+  });
+
+  final WidgetBuilder compact;
+  final WidgetBuilder? medium;
+  final WidgetBuilder? expanded;
+  final WidgetBuilder? large;
+  final WidgetBuilder? extraLarge;
+
+  @override
+  Widget build(BuildContext context) {
+    final windowClass = FitScale.windowClassOf(context);
+    final builders = [compact, medium, expanded, large, extraLarge];
+    var builder = compact;
+    for (var i = windowClass.index; i >= 0; i--) {
+      final candidate = builders[i];
+      if (candidate != null) {
+        builder = candidate;
+        break;
+      }
+    }
+    return Builder(builder: builder);
+  }
+}

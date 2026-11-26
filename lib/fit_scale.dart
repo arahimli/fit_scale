@@ -5,6 +5,7 @@
 /// For the test harness, import `package:fit_scale/testing.dart`.
 library;
 
+export 'src/breakpoints.dart';
 export 'src/config.dart';
 export 'src/data.dart';
 export 'src/fit_text.dart';

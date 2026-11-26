@@ -1,6 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+// Needed on Flutter 3.24, where foundation.dart does not export @internal.
+// ignore: unnecessary_import
+import 'package:meta/meta.dart';
 
+import 'breakpoints.dart';
 import 'config.dart';
 import 'data.dart';
 
@@ -78,10 +82,11 @@ class _FitScaleScopeState extends State<FitScaleScope> {
     final changed = _published != null && _published != data;
     _published = data;
     FitScale._global = data;
-    if (changed) {
+    if (changed && FitScale._extensionsUsed) {
       // Extension calls (`16.w`) do not register a dependency, so mark
       // every descendant dirty. Allowed during build because they are
-      // all below the widget being built.
+      // all below the widget being built. Skipped entirely in apps that
+      // only use context.fit.
       void markDirty(Element element) {
         element.markNeedsBuild();
         element.visitChildren(markDirty);
@@ -92,18 +97,32 @@ class _FitScaleScopeState extends State<FitScaleScope> {
   }
 }
 
-class _FitScaleInherited extends InheritedWidget {
+enum _Aspect { classes }
+
+class _FitScaleInherited extends InheritedModel<_Aspect> {
   const _FitScaleInherited({required this.data, required super.child});
 
   final FitScaleData data;
 
   @override
   bool updateShouldNotify(_FitScaleInherited old) => data != old.data;
+
+  /// Widgets that only asked for the window or height class rebuild only
+  /// when a class changes, not on every pixel of a resize.
+  @override
+  bool updateShouldNotifyDependent(
+    _FitScaleInherited old,
+    Set<_Aspect> dependencies,
+  ) =>
+      dependencies.contains(_Aspect.classes) &&
+      (data.windowClass != old.data.windowClass ||
+          data.heightClass != old.data.heightClass);
 }
 
 /// Lookup helpers for [FitScaleData].
 abstract final class FitScale {
   static FitScaleData? _global;
+  static bool _extensionsUsed = false;
 
   /// Data of the root [FitScaleScope] currently in the tree, or null.
   ///
@@ -111,6 +130,42 @@ abstract final class FitScale {
   /// in your own code: it follows nested scopes and rebuilds only the
   /// widgets that read it.
   static FitScaleData? get global => _global;
+
+  /// [global] for `package:fit_scale/extensions.dart`. Also records that
+  /// extensions are in use, which turns on the root scope's subtree
+  /// rebuild on size changes.
+  @internal
+  static FitScaleData? globalForExtensions() {
+    _extensionsUsed = true;
+    return _global;
+  }
+
+  /// Window class of the nearest scope. Rebuilds the caller only when
+  /// the window or height class changes.
+  static FitWindowClass windowClassOf(BuildContext context) =>
+      _classesOf(context).windowClass;
+
+  /// Height class of the nearest scope. Rebuilds the caller only when
+  /// the window or height class changes.
+  static FitHeightClass heightClassOf(BuildContext context) =>
+      _classesOf(context).heightClass;
+
+  static FitScaleData _classesOf(BuildContext context) {
+    final data = InheritedModel.inheritFrom<_FitScaleInherited>(
+      context,
+      aspect: _Aspect.classes,
+    )?.data;
+    if (data == null) {
+      throw FlutterError.fromParts([
+        ErrorSummary('No FitScaleScope found.'),
+        ErrorHint(
+          'Wrap your app in FitScaleScope(config: FitScaleConfig('
+          'designSize: Size(w, h)), child: ...).',
+        ),
+      ]);
+    }
+    return data;
+  }
 
   /// The nearest [FitScaleData]. Throws if there is no [FitScaleScope].
   static FitScaleData of(BuildContext context) {

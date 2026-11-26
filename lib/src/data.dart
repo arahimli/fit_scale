@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
+import 'breakpoints.dart';
 import 'config.dart';
 
 /// Scale factors for one screen (or one pane) size.
@@ -100,8 +101,56 @@ class FitScaleData {
     return out;
   }
 
-  /// Shortest side below 600 (phones, foldable covers).
+  /// Shortest side below 600 (phones, foldable covers), whatever the
+  /// orientation. For layout decisions use [windowClass], which follows
+  /// the width.
   bool get isCompact => size.shortestSide < 600;
+
+  /// Width class of this screen or pane.
+  FitWindowClass get windowClass => config.breakpoints.widthClass(size.width);
+
+  /// Height class of this screen or pane.
+  FitHeightClass get heightClass => config.breakpoints.heightClass(size.height);
+
+  /// Builds the result for the current [windowClass].
+  ///
+  /// Mobile first: a class without a builder uses the nearest narrower
+  /// one, down to [compact]. Only the chosen builder runs.
+  ///
+  /// ```dart
+  /// fit.when(compact: () => OneColumn(), expanded: () => TwoColumns())
+  /// ```
+  T when<T>({
+    required T Function() compact,
+    T Function()? medium,
+    T Function()? expanded,
+    T Function()? large,
+    T Function()? extraLarge,
+  }) {
+    final builders = [compact, medium, expanded, large, extraLarge];
+    for (var i = windowClass.index; i >= 0; i--) {
+      final builder = builders[i];
+      if (builder != null) return builder();
+    }
+    return compact();
+  }
+
+  /// A value for the current [windowClass], with the same fallback as
+  /// [when]: `fit.pick(compact: 1, medium: 2, expanded: 3)` columns.
+  T pick<T>({
+    required T compact,
+    T? medium,
+    T? expanded,
+    T? large,
+    T? extraLarge,
+  }) {
+    final values = [compact, medium, expanded, large, extraLarge];
+    for (var i = windowClass.index; i >= 0; i--) {
+      final value = values[i];
+      if (value != null) return value;
+    }
+    return compact;
+  }
 
   @override
   bool operator ==(Object other) =>

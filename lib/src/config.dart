@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+import 'breakpoints.dart';
+
 /// How design numbers turn into real sizes.
 ///
 /// Unlike linear scaling, every factor is clamped to
@@ -14,6 +16,7 @@ class FitScaleConfig {
     this.minFontScale = 1.0,
     this.maxFontScale = 1.15,
     this.minTapTarget,
+    this.breakpoints = const FitBreakpoints(),
   })  : assert(minScale > 0 && minScale <= maxScale),
         assert(minFontScale > 0 && minFontScale <= maxFontScale),
         assert(minTapTarget == null || minTapTarget > 0);
@@ -35,6 +38,9 @@ class FitScaleConfig {
   /// guideline: 44 on iOS and macOS, 48 everywhere else.
   final double? minTapTarget;
 
+  /// Where window and height classes start. Material 3 by default.
+  final FitBreakpoints breakpoints;
+
   FitScaleConfig copyWith({
     Size? designSize,
     double? minScale,
@@ -42,6 +48,7 @@ class FitScaleConfig {
     double? minFontScale,
     double? maxFontScale,
     double? minTapTarget,
+    FitBreakpoints? breakpoints,
   }) {
     return FitScaleConfig(
       designSize: designSize ?? this.designSize,
@@ -50,6 +57,7 @@ class FitScaleConfig {
       minFontScale: minFontScale ?? this.minFontScale,
       maxFontScale: maxFontScale ?? this.maxFontScale,
       minTapTarget: minTapTarget ?? this.minTapTarget,
+      breakpoints: breakpoints ?? this.breakpoints,
     );
   }
 
@@ -61,7 +69,8 @@ class FitScaleConfig {
       other.maxScale == maxScale &&
       other.minFontScale == minFontScale &&
       other.maxFontScale == maxFontScale &&
-      other.minTapTarget == minTapTarget;
+      other.minTapTarget == minTapTarget &&
+      other.breakpoints == breakpoints;
 
   @override
   int get hashCode => Object.hash(
@@ -71,5 +80,6 @@ class FitScaleConfig {
         minFontScale,
         maxFontScale,
         minTapTarget,
+        breakpoints,
       );
 }

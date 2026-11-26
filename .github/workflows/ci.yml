@@ -53,4 +53,7 @@ jobs:
 
       - name: Publish dry run
         if: matrix.flutter == 'stable'
-        run: flutter pub publish --dry-run
+        run: |
+          git status --short
+          git diff
+          flutter pub publish --dry-run

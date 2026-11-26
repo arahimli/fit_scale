@@ -1,3 +1,14 @@
+## 0.9.0
+
+* Report diff: `testFitScale(baselineDir: ...)` and `writeFitReport` (or
+  the `FIT_SCALE_BASELINE` environment variable) compare each screen with
+  an earlier run's `<screen>.json` and list cases that regressed, got
+  fixed, changed, were added or removed, in the markdown, the HTML page,
+  the index ("Since baseline" column) and the CI job summary.
+* `FitReportDiff`, `FitCaseChange` and `FitChangeKind` are public.
+* CI: pull requests compare against the report of `main`'s latest green
+  run.
+
 ## 0.8.0
 
 * New `FitTextScale`: scales every font below it by the screen's font

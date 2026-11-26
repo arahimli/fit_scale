@@ -3,6 +3,7 @@ import 'dart:io';
 
 import '../breakpoints.dart';
 import 'devices.dart';
+import 'diff.dart';
 import 'harness.dart';
 
 /// One device and text size of a [FitScreenReport].
@@ -90,7 +91,9 @@ class FitScreenReport {
 
   /// A table of devices × text sizes plus the problems of each failed
   /// case. Fits a pull request comment or a CI job summary.
-  String toMarkdown() {
+  ///
+  /// With [diff], a list of changes since the baseline follows the table.
+  String toMarkdown({FitReportDiff? diff}) {
     final scales = _scales;
     final b = StringBuffer()
       ..writeln('### ${_md(name)}: $passed / $total passed')
@@ -128,18 +131,26 @@ class FitScreenReport {
       }
       b.writeln('</details>');
     }
+    if (diff != null) {
+      b
+        ..writeln()
+        ..write(diff.toMarkdown());
+    }
     return b.toString();
   }
 
   /// A self-contained page: the same table with a screenshot per case
   /// (when taken) and every problem listed below it.
-  String toHtml() {
+  ///
+  /// With [diff], a section of changes since the baseline comes first.
+  String toHtml({FitReportDiff? diff}) {
     final scales = _scales;
     final b = StringBuffer()
       ..write(_htmlHead(name))
       ..writeln('<h1>${_html(name)}</h1>')
       ..writeln('<p class="sum ${passed == total ? 'ok' : 'bad'}">'
           '$passed / $total cases passed</p>')
+      ..write(diff?.toHtml() ?? '')
       ..writeln('<table><thead><tr><th>Device</th>')
       ..writeln(scales.map((s) => '<th>Text ${_scale(s)}</th>').join())
       ..writeln('</tr></thead><tbody>');
@@ -215,22 +226,51 @@ class FitScreenReport {
 /// [dir], rebuilds `index.html` from every screen report there, and
 /// appends the markdown to [summaryPath] (by default GitHub Actions'
 /// `GITHUB_STEP_SUMMARY`, when set).
-void writeFitReport(FitScreenReport report, String dir, {String? summaryPath}) {
+///
+/// With [baselineDir] (by default the `FIT_SCALE_BASELINE` environment
+/// variable) holding an earlier run's reports, each report also lists
+/// what changed since then: cases that regressed, got fixed or changed.
+void writeFitReport(
+  FitScreenReport report,
+  String dir, {
+  String? summaryPath,
+  String? baselineDir,
+}) {
   final out = Directory(dir)..createSync(recursive: true);
   final slug = report.slug;
-  File('${out.path}/$slug.html').writeAsStringSync(report.toHtml());
-  File('${out.path}/$slug.md').writeAsStringSync(report.toMarkdown());
+
+  final base = baselineDir ?? Platform.environment['FIT_SCALE_BASELINE'];
+  FitReportDiff? diff;
+  if (base != null && base.isNotEmpty) {
+    final file = File('$base/$slug.json');
+    if (file.existsSync()) {
+      try {
+        final data = jsonDecode(file.readAsStringSync());
+        if (data is Map<String, dynamic>) diff = FitReportDiff(data, report);
+      } on FormatException {
+        // Unreadable baseline: report without a diff.
+      }
+    }
+  }
+
+  final markdown = report.toMarkdown(diff: diff);
+  File('${out.path}/$slug.html').writeAsStringSync(report.toHtml(diff: diff));
+  File('${out.path}/$slug.md').writeAsStringSync(markdown);
   File('${out.path}/$slug.json').writeAsStringSync(
-    const JsonEncoder.withIndent('  ').convert(report.toJson()),
+    const JsonEncoder.withIndent('  ').convert({
+      ...report.toJson(),
+      if (diff != null)
+        'sinceBaseline': {
+          'summary': diff.summary,
+          'regressions': diff.hasRegressions,
+        },
+    }),
   );
   _writeIndex(out);
 
   final summary = summaryPath ?? Platform.environment['GITHUB_STEP_SUMMARY'];
   if (summary != null && summary.isNotEmpty) {
-    File(summary).writeAsStringSync(
-      '${report.toMarkdown()}\n',
-      mode: FileMode.append,
-    );
+    File(summary).writeAsStringSync('$markdown\n', mode: FileMode.append);
   }
 }
 
@@ -251,13 +291,19 @@ void _writeIndex(Directory dir) {
   final b = StringBuffer()
     ..write(_htmlHead('fit_scale report'))
     ..writeln('<h1>fit_scale report</h1>')
-    ..writeln('<table><thead><tr><th>Screen</th><th>Passed</th></tr>'
-        '</thead><tbody>');
+    ..writeln('<table><thead><tr><th>Screen</th><th>Passed</th>'
+        '<th>Since baseline</th></tr></thead><tbody>');
   for (final s in screens) {
     final ok = s['passed'] == s['total'];
+    final since = s['sinceBaseline'];
+    final sinceCell = since is Map
+        ? '<span class="tag ${since['regressions'] == true ? 'bad' : 'ok'}">'
+            '${_html('${since['summary']}')}</span>'
+        : '–';
     b.writeln('<tr><th class="dev"><a href="${_html('${s['slug']}')}.html">'
         '${_html('${s['name']}')}</a></th><td><span class="tag '
-        '${ok ? 'ok' : 'bad'}">${s['passed']} / ${s['total']}</span></td></tr>');
+        '${ok ? 'ok' : 'bad'}">${s['passed']} / ${s['total']}</span></td>'
+        '<td>$sinceCell</td></tr>');
   }
   b.writeln('</tbody></table></body></html>');
   File('${dir.path}/index.html').writeAsStringSync(b.toString());

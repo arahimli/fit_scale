@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
 
+# actions: read lets a pull request download main's report as a baseline.
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   test:
     name: Flutter ${{ matrix.flutter }}
@@ -43,9 +48,25 @@ jobs:
           flutter analyze lib
           flutter analyze --no-fatal-infos
 
+      # On a pull request, compare against the report of main's latest
+      # green run, so the job summary says what this change broke or fixed.
+      - name: Download baseline report from main
+        if: github.event_name == 'pull_request' && matrix.flutter == 'stable'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          id=$(gh run list -R "$GITHUB_REPOSITORY" -b main -w ci.yml -s success \
+            -L 1 --json databaseId -q '.[0].databaseId')
+          if [ -n "$id" ]; then
+            gh run download "$id" -R "$GITHUB_REPOSITORY" -n fit_scale-report \
+              -D build/fit_scale_baseline || echo "no baseline report"
+          fi
+
       # Tests that pass reportDir to testFitScale write an HTML report
       # (and add a table to this job's summary); keep it, also on failure.
       - run: flutter test
+        env:
+          FIT_SCALE_BASELINE: build/fit_scale_baseline
 
       - name: Upload fit_scale report
         if: always() && matrix.flutter == 'stable'

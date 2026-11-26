@@ -195,7 +195,10 @@ Future<FitReport> pumpFitScreen(
 /// when cases fail: `<description>.html` (a device × text size table with
 /// a screenshot per case), `.md` (the same table, for pull requests),
 /// `.json`, and an `index.html` of every screen in the directory. On
-/// GitHub Actions the markdown is added to the job summary. See
+/// GitHub Actions the markdown is added to the job summary. With
+/// [baselineDir] (or the `FIT_SCALE_BASELINE` environment variable)
+/// pointing at an earlier run's report directory, the report also lists
+/// cases that regressed, got fixed or changed since then. See
 /// [writeFitReport].
 @isTestGroup
 void testFitScale(
@@ -207,12 +210,15 @@ void testFitScale(
   Set<FitCheck> checks = FitCheck.defaults,
   String? goldenDir,
   String? reportDir,
+  String? baselineDir,
   bool? skip,
 }) {
   final screen = reportDir == null ? null : FitScreenReport(description);
   group(description, () {
     if (screen != null) {
-      tearDownAll(() => writeFitReport(screen, reportDir!));
+      tearDownAll(
+        () => writeFitReport(screen, reportDir!, baselineDir: baselineDir),
+      );
     }
     for (final device in devices) {
       for (final scale in textScales) {

@@ -450,6 +450,44 @@ The job summary for the same screen starts like this:
 
 The same screen written with fit_scale passes all 33.
 
+#### What changed since the last run
+
+Point `baselineDir` (or the `FIT_SCALE_BASELINE` environment variable) at
+an earlier run's report directory and each report also lists what changed:
+cases that **regressed** (passed before, fail now), got **fixed**,
+**changed** (failed before and now, with different problems), or were
+added or removed. The index page gets a "Since baseline" column, and the
+job summary shows the list:
+
+```
+#### Since baseline: 1 regressed · 1 fixed
+
+- 🔴 **regressed** iphone_se1, text ×1.0
+  - new: overflow: A RenderFlex overflowed by 9 pixels on the bottom.
+- 🟢 **fixed** iphone_se1, text ×2.0
+  - gone: overflow: A RenderFlex overflowed by 121 pixels on the bottom.
+```
+
+On GitHub Actions, download the report of `main`'s latest green run in
+pull requests (the workflow needs `permissions: actions: read`):
+
+```yaml
+- name: Download baseline report from main
+  if: github.event_name == 'pull_request'
+  env:
+    GH_TOKEN: ${{ github.token }}
+  run: |
+    id=$(gh run list -R "$GITHUB_REPOSITORY" -b main -w ci.yml -s success \
+      -L 1 --json databaseId -q '.[0].databaseId')
+    [ -n "$id" ] && gh run download "$id" -R "$GITHUB_REPOSITORY" \
+      -n fit_scale-report -D build/fit_scale_baseline || true
+- run: flutter test
+  env:
+    FIT_SCALE_BASELINE: build/fit_scale_baseline
+```
+
+`FitReportDiff` is public for building your own comparisons.
+
 ## Migrating from flutter_screenutil
 
 ### 1. Swap the import

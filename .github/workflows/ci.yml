@@ -34,7 +34,14 @@ jobs:
         if: matrix.flutter == 'stable'
         run: dart format --output=none --set-exit-if-changed lib test example/lib
 
-      - run: flutter analyze
+      # lib/ only uses package:flutter/widgets.dart and must stay clean.
+      # Tests and the example use material.dart, which Flutter 3.47+
+      # deprecates in favour of material_ui (not available on 3.24), so
+      # infos there do not fail the build.
+      - name: Analyze
+        run: |
+          flutter analyze lib
+          flutter analyze --no-fatal-infos
 
       - run: flutter test
 
@@ -42,7 +49,7 @@ jobs:
         working-directory: example
         run: |
           flutter pub get
-          flutter analyze
+          flutter analyze --no-fatal-infos
 
       - name: Publish dry run
         if: matrix.flutter == 'stable'

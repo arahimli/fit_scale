@@ -45,9 +45,10 @@ void main() {
     textScale(tester, 2); // 'JD' at 18 draws 72 wide in a 50 box
     await tester.pumpWidget(box(50, 50, jd));
     // Fits when 2 glyphs x size x 2 <= 50, so size <= 12.5.
-    expect(fontOf(tester), closeTo(12.5, 0.05));
-    // fits() allows 0.01 px for float error in layout.
-    expect(fontOf(tester) * 2 * 2, lessThanOrEqualTo(50.01));
+    // Font metrics differ slightly between platforms, so check the laid
+    // out text rather than exact arithmetic.
+    expect(fontOf(tester), closeTo(12.5, 0.1));
+    expect(paragraphOf(tester).size.width, lessThanOrEqualTo(50.01));
     expect(paragraphOf(tester).didExceedMaxLines, isFalse);
   });
 

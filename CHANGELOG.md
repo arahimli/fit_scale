@@ -1,3 +1,12 @@
+## 0.1.1
+
+* README: side-by-side screenshots against flutter_screenutil, measured on
+  the real package (0 of 24 device and text-size cases fail), and a note on
+  the Flutter 3.47 Material split.
+* pubspec: screenshots for pub.dev.
+* CI on Flutter 3.24.5 and stable; `flutter_lints` lowered to ^5.0.0 so the
+  package resolves on its minimum Flutter version.
+
 ## 0.1.0
 
 * First release.

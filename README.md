@@ -19,7 +19,19 @@ screen designed at 360×690:
 | iPad mini | overflowed by 34 px at default text, avatar 116×92 |
 | Phone landscape 874×402 | button 28 px, overflow 164 px, avatar ratio 4.2 |
 
-With fit_scale the same screen passes on all of them.
+With fit_scale the same screen passes on all of them: 0 of 24 device and
+text-size combinations fail, against 24 of 24 with linear scaling.
+
+![iPhone SE with system text ×1.3: screenutil overflows and shrinks the button, fit_scale does not](https://raw.githubusercontent.com/arahimli/fit_scale/main/doc/screenshots/iphone_se1_320x568_x1.3.png)
+
+<details>
+<summary>More: iPhone 16 Pro with text ×2.0, phone in landscape</summary>
+
+![iPhone 16 Pro with system text ×2.0](https://raw.githubusercontent.com/arahimli/fit_scale/main/doc/screenshots/iphone16pro_402x874_x2.0.png)
+
+![Phone in landscape](https://raw.githubusercontent.com/arahimli/fit_scale/main/doc/screenshots/phone_landscape_874x402_x1.0.png)
+
+</details>
 
 ## What it does
 

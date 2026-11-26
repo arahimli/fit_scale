@@ -1,0 +1,29 @@
+name: fit_scale
+description: >-
+  Clamped responsive sizing for Flutter. Layouts that do not overflow, shrink
+  touch targets or distort shapes on small, large or rotated screens, plus a
+  test harness that checks every screen across devices and text sizes.
+version: 0.1.0
+repository: https://github.com/arahimli/fit_scale
+issue_tracker: https://github.com/arahimli/fit_scale/issues
+topics:
+  - responsive
+  - layout
+  - accessibility
+  - testing
+  - screen-size
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Only used by package:fit_scale/testing.dart.
+  flutter_test:
+    sdk: flutter
+  meta: ^1.11.0
+
+dev_dependencies:
+  flutter_lints: ^6.0.0

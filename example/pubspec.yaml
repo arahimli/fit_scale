@@ -1,0 +1,15 @@
+name: fit_scale_example
+description: Example app for fit_scale.
+publish_to: none
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  fit_scale:
+    path: ../
+
+flutter:
+  uses-material-design: true

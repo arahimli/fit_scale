@@ -1,3 +1,11 @@
+## 0.8.0
+
+* New `FitTextScale`: scales every font below it by the screen's font
+  factor, theme text styles included, so no `fit.sp()` calls are needed.
+  It composes `FitTextScaler` (factor first, then the user's system text
+  scaler) into `MediaQuery`, so it works with Material, Cupertino or any
+  design system and adds no Material dependency. Nested ones do nothing.
+
 ## 0.7.1
 
 * Shorter package description (pub.dev asks for 60–180 characters).

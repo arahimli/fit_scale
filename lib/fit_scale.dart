@@ -13,4 +13,5 @@ export 'src/fit_text.dart';
 export 'src/hinge.dart';
 export 'src/hinge_layout.dart';
 export 'src/scope.dart';
+export 'src/text_scale.dart';
 export 'src/widgets.dart';

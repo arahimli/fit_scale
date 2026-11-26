@@ -41,7 +41,9 @@ text-size combinations fail, against 24 of 24 with linear scaling.
 - **Touch-target floor.** `tap()` never returns less than 48 (Android) or
   44 (iOS).
 - **Fonts never below the design.** `sp()` only grows (up to 1.15×). The
-  user's system text size is applied on top by Flutter as usual.
+  user's system text size is applied on top by Flutter as usual. Or wrap
+  the app in `FitTextScale` and every `Text` scales, theme styles
+  included, with no `sp()` calls at all.
 - **Boxes that grow.** `FitBox` is a minimum height, not a fixed one, so
   large text pushes the box taller instead of overflowing.
 - **Shapes that keep their shape.** `r()` and `FitSquare` use one factor
@@ -132,6 +134,7 @@ class CheckoutPage extends StatelessWidget {
 | `FitBox(height:, interactive:)` | instead of `SizedBox(height: x.h)` around text |
 | `FitSquare(size:)` | instead of `width: x.w, height: x.h` for squares |
 | `FitText(text, minFontSize:)` | text in a space that cannot grow |
+| `FitTextScale(child:)` | scale every font in the app, no `sp()` needed |
 | `fit.when(compact:, medium:, ...)` | a different layout per window class |
 | `fit.pick(compact:, medium:, ...)` | a different value per window class |
 | `FitLayout(compact:, medium:, ...)` | the same as a widget, rebuilding only on class change |
@@ -175,6 +178,31 @@ the 24.
 `maxLines` defaults to 1. Set it to `null` to let the text wrap onto as
 many lines as the height allows (an ellipsis then becomes a clip, because
 Flutter would otherwise cut the first line).
+
+### FitTextScale
+
+Calling `fit.sp()` on every font size is easy to forget, and theme styles
+(`Theme.of(context).textTheme.titleLarge`) never get it. `FitTextScale`
+scales all text below it instead:
+
+```dart
+FitScaleScope(
+  child: MaterialApp(
+    builder: (context, child) => FitTextScale(child: child!),
+    home: const CheckoutPage(),
+  ),
+)
+```
+
+It sets the ambient text scaler to the screen's font factor composed with
+the user's system text size, so every `Text` follows: Material and
+Cupertino themes, your own styles, `FitText`. It uses no theme class, so it
+does not depend on Material. The factor is applied before the system
+scaler, which keeps Android 14's non-linear font scaling correct, and the
+harness and the overlay measure the same drawn sizes.
+
+Below it, write plain sizes (`fontSize: 14`), not `fit.sp(14)` or `14.sp`,
+or the factor applies twice. A nested `FitTextScale` does nothing.
 
 ### Breakpoints
 

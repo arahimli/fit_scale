@@ -1,3 +1,9 @@
+## 0.11.2
+
+* README: link to the article that explains why the package exists,
+  with numbers
+  (https://medium.com/@arahimli/your-flutter-app-breaks-on-small-phones-heres-a-live-demo-of-why-and-the-fix-cea5fe840a3a).
+
 ## 0.11.1
 
 * README: link to the live playground

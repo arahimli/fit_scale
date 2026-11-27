@@ -7,7 +7,7 @@ library;
 
 /// Version written into a migrated pubspec. Kept in step with
 /// pubspec.yaml by a test.
-const fitScaleVersion = '0.11.1';
+const fitScaleVersion = '0.11.2';
 
 /// Something the tool could not change safely.
 class MigrationNote {

@@ -191,8 +191,7 @@ void main() {
         .where((p) => p.kind == FitDebugProblemKind.tapTarget)
         .toList();
     expect(taps, hasLength(1));
-    expect(taps.single.rect,
-        tester.getRect(find.byKey(tapKey)));
+    expect(taps.single.rect, tester.getRect(find.byKey(tapKey)));
   });
 
   testWidgets('measures tap targets at layout size under a scaling transform',

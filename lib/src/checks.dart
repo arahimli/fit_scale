@@ -85,10 +85,21 @@ bool isIconGlyph(String text) =>
 
 /// A tappable element from the semantics tree.
 class TapTarget {
-  const TapTarget(this.rect, this.label, {required this.cutByScreenEdge});
+  const TapTarget(
+    this.rect,
+    this.label, {
+    required this.cutByScreenEdge,
+    Size? layoutSize,
+  }) : layoutSize = layoutSize ?? Size.zero;
 
-  /// Position on screen, in logical pixels.
+  /// Position on screen, in logical pixels: the drawn size, after every
+  /// ancestor transform.
   final Rect rect;
+
+  /// Size before ancestor transforms, in logical pixels. Differs from
+  /// [rect]'s size when the target sits under a scaling `Transform` or
+  /// `FittedBox`, for example a device-frame preview.
+  final Size layoutSize;
   final String label;
 
   /// Partly off screen: its visible size says nothing about its real
@@ -135,6 +146,7 @@ List<TapTarget> tapTargets(
     targets.add(TapTarget(
       rect,
       data.label,
+      layoutSize: node.rect.size,
       cutByScreenEdge: rect.left < 0 ||
           rect.top < 0 ||
           rect.right > screen.width + 0.01 ||

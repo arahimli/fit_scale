@@ -112,6 +112,7 @@ class FitDebugOverlay extends StatefulWidget {
 
 class _FitDebugOverlayState extends State<FitDebugOverlay> {
   final _childKey = GlobalKey();
+  final _childSemantics = _SemanticsSink();
   SemanticsHandle? _semantics;
   List<FitDebugProblem> _problems = const [];
   FitHinge? _hinge;
@@ -192,14 +193,17 @@ class _FitDebugOverlayState extends State<FitDebugOverlay> {
     );
     final min = _minTap;
     final found = <FitDebugProblem>[
+      // Layout size, not drawn size: a preview that scales the whole app
+      // down (a device frame, FittedBox) does not shrink the real button.
       for (final t in targets)
         if (!t.cutByScreenEdge &&
-            (t.rect.width + 0.01 < min || t.rect.height + 0.01 < min))
+            (t.layoutSize.width + 0.01 < min ||
+                t.layoutSize.height + 0.01 < min))
           FitDebugProblem(
             FitDebugProblemKind.tapTarget,
             t.rect.shift(-origin),
-            'tap target ${t.rect.width.toStringAsFixed(0)}x'
-            '${t.rect.height.toStringAsFixed(0)}, below '
+            'tap target ${t.layoutSize.width.toStringAsFixed(0)}x'
+            '${t.layoutSize.height.toStringAsFixed(0)}, below '
             '${min.toStringAsFixed(0)}x${min.toStringAsFixed(0)}',
           ),
       for (final issue in smallText(paragraphs, widget.minFontSize))
@@ -253,7 +257,12 @@ class _FitDebugOverlayState extends State<FitDebugOverlay> {
       };
 
   List<TapTarget> _targets(RenderObject root) {
-    final rootNode = root.owner?.semanticsOwner?.rootSemanticsNode;
+    // Only the child's own nodes: not a sibling route, another overlay or
+    // anything else above or beside this widget.
+    final own = _childSemantics.node;
+    final rootNode = own != null && own.attached
+        ? own
+        : root.owner?.semanticsOwner?.rootSemanticsNode;
     if (rootNode == null) return const [];
     final view = View.maybeOf(context);
     final ratio = view?.devicePixelRatio ?? 1;
@@ -271,7 +280,10 @@ class _FitDebugOverlayState extends State<FitDebugOverlay> {
     return Stack(
       textDirection: TextDirection.ltr,
       children: [
-        KeyedSubtree(key: _childKey, child: widget.child),
+        KeyedSubtree(
+          key: _childKey,
+          child: _SemanticsCapture(sink: _childSemantics, child: widget.child),
+        ),
         Positioned.fill(
           child: IgnorePointer(
             child: CustomPaint(
@@ -367,6 +379,61 @@ class _FitDebugOverlayState extends State<FitDebugOverlay> {
         ),
       ),
     );
+  }
+}
+
+/// Holds the semantics node [_SemanticsCapture] built for the child.
+class _SemanticsSink {
+  SemanticsNode? node;
+}
+
+/// Gives the overlay's child its own semantics container and records the
+/// node, so the overlay can scan just that subtree. Works in release
+/// builds too, unlike `RenderObject.debugSemantics`.
+class _SemanticsCapture extends SingleChildRenderObjectWidget {
+  const _SemanticsCapture({required this.sink, super.child});
+
+  final _SemanticsSink sink;
+
+  @override
+  _RenderSemanticsCapture createRenderObject(BuildContext context) =>
+      _RenderSemanticsCapture(sink);
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    _RenderSemanticsCapture renderObject,
+  ) =>
+      renderObject.sink = sink;
+}
+
+class _RenderSemanticsCapture extends RenderProxyBox {
+  _RenderSemanticsCapture(this.sink);
+
+  _SemanticsSink sink;
+
+  @override
+  void describeSemanticsConfiguration(SemanticsConfiguration config) {
+    super.describeSemanticsConfiguration(config);
+    config
+      ..isSemanticBoundary = true
+      ..explicitChildNodes = true;
+  }
+
+  @override
+  void assembleSemanticsNode(
+    SemanticsNode node,
+    SemanticsConfiguration config,
+    Iterable<SemanticsNode> children,
+  ) {
+    sink.node = node;
+    super.assembleSemanticsNode(node, config, children);
+  }
+
+  @override
+  void detach() {
+    sink.node = null;
+    super.detach();
   }
 }
 

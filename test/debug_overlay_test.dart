@@ -160,4 +160,79 @@ void main() {
     expect(find.text('fit · ok'), findsOneWidget);
     expect(taps, 1);
   });
+
+  testWidgets('only checks tap targets inside its own child', (tester) async {
+    setScreen(tester, const Size(360, 690));
+    final calls = <List<FitDebugProblem>>[];
+    await tester.pumpWidget(FitScaleScope(
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: Stack(
+          children: [
+            FitDebugOverlay(
+              onProblems: calls.add,
+              child: MaterialApp(home: Scaffold(body: badBody())),
+            ),
+            // A small button beside the overlay, not inside it.
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: GestureDetector(
+                onTap: () {},
+                child: const SizedBox(width: 20, height: 20),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    final taps = calls.last
+        .where((p) => p.kind == FitDebugProblemKind.tapTarget)
+        .toList();
+    expect(taps, hasLength(1));
+    expect(taps.single.rect,
+        tester.getRect(find.byKey(tapKey)));
+  });
+
+  testWidgets('measures tap targets at layout size under a scaling transform',
+      (tester) async {
+    setScreen(tester, const Size(360, 690));
+    final calls = <List<FitDebugProblem>>[];
+    await tester.pumpWidget(FitScaleScope(
+      child: FitDebugOverlay(
+        onProblems: calls.add,
+        // A device-frame style preview: the whole app drawn at half size.
+        child: Transform.scale(
+          scale: 0.5,
+          child: MaterialApp(
+            home: Scaffold(
+              body: Column(
+                children: [
+                  GestureDetector(
+                    onTap: () {},
+                    child: const SizedBox(width: 48, height: 48),
+                  ),
+                  GestureDetector(
+                    key: tapKey,
+                    onTap: () {},
+                    child: const SizedBox(width: 30, height: 30),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    final taps = calls.last
+        .where((p) => p.kind == FitDebugProblemKind.tapTarget)
+        .toList();
+    // The 48 px button is drawn at 24 px but is fine; the 30 px one is not.
+    expect(taps, hasLength(1));
+    expect(taps.single.message, startsWith('tap target 30x30'));
+    // Outlined where it is drawn.
+    expect(taps.single.rect.size, const Size(15, 15));
+  });
 }

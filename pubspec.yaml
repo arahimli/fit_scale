@@ -2,7 +2,7 @@ name: fit_scale
 description: >-
   Responsive sizing for Flutter that does not overflow on small, large or
   foldable screens, with a multi-device test harness and a debug overlay.
-version: 0.11.2
+version: 0.11.3
 repository: https://github.com/arahimli/fit_scale
 issue_tracker: https://github.com/arahimli/fit_scale/issues
 screenshots:

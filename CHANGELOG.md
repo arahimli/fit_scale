@@ -1,3 +1,13 @@
+## 0.11.3
+
+* `FitDebugOverlay` checks only the tap targets inside its own child.
+  It used to scan the whole semantics tree, so buttons beside the
+  overlay (another route, a second overlay) were reported too.
+* `FitDebugOverlay` measures tap targets at their layout size, not their
+  drawn size. Under a scaling `Transform` or `FittedBox`, such as a
+  device-frame preview, every button was reported as too small. The
+  outline still marks where the button is drawn.
+
 ## 0.11.2
 
 * README: link to the article that explains why the package exists,
